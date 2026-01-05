@@ -28,7 +28,7 @@ What is a program? Instructions and data.
 \begin{frame}
 \frametitle{To Execute a Program}
 
-To execute a program we need:
+To execute a program, we need:
 
 \begin{enumerate}
 	\item \textbf{Main Memory}
@@ -93,6 +93,8 @@ The CPU doesn't go get the data; instead it must wait for it to arrive.
 
 What might I do in the meantime...?
 
+We will come back to this question soon.
+
 \end{frame}
 
 
@@ -143,7 +145,7 @@ CPU instructions are specific to the processor.
 
 Written assembly? You know the books.
 
-Some operations only available in supervisor mode.\\
+Some operations are only available in supervisor mode.\\
 \quad Attempting to run it in user mode is an error.
 
 
@@ -195,7 +197,7 @@ Program is a sequence of instructions. We can categorize them as:
 \begin{frame}
 \frametitle{Interrupts}
 
-If I ordered a book from Ottawa, it takes a long time to arrive.
+If I order a book from Ottawa, it takes a long time to arrive.
 
 Polling: check periodically if the book has arrived.
 
@@ -223,14 +225,15 @@ We can put interrupts into four categories, based on their origin:
 
 \begin{frame}
 \frametitle{Interrupts}
+
 Interrupts are a way to improve processor utilization.
 
 CPU time is valuable!
 
-When an interrupt take place, the CPU might ignore it (rarely).
+When an interrupt takes place, the CPU might ignore it (rarely).
 
 \begin{center}
-	\includegraphics[width=0.5\textwidth]{images/imbusy.jpg}
+	\includegraphics[width=0.4\textwidth]{images/imbusy.jpg}
 \end{center}
 
 \end{frame}
@@ -241,7 +244,7 @@ Interrupts are a way to improve processor utilization.
 
 More commonly: we need to \alert{handle} it in some way.
 
-Analogy: professor in a lecture; student has a question.
+Analogy: professor in a lecture; a student has a question.
 
 
 \end{frame}
@@ -276,7 +279,7 @@ They may be sequential (left) or nested (right), or a combination.
 The OS must store the program state when an interrupt occurs.
 
 \begin{center}
-	\includegraphics[width=0.7\textwidth]{images/rememberthings.jpg}
+	\includegraphics[width=0.45\textwidth]{images/rememberthings.jpg}
 \end{center}
 
 \end{frame}
@@ -292,7 +295,7 @@ Where? Push them onto the stack.
 
 Interrupt finished: restore the state (pop off the stack).
 
-Then execution continues.
+Then the execution continues.
 
 \end{frame}
 
@@ -303,7 +306,7 @@ That is saving and restoring the same program.
 Why not restore a different program?
 
 \begin{center}
-	\includegraphics[width=0.4\textwidth]{images/why-not-zoidberg.jpg}
+	\includegraphics[width=0.3\textwidth]{images/why-not-zoidberg.jpg}
 \end{center}
 
 We will come to this in scheduling.
@@ -332,7 +335,7 @@ Three major strategies for communication:
 CPU does setup -- data sent to DMA module.
 
 \begin{center}
-	\includegraphics[width=0.5\textwidth]{images/delegate.jpg}
+	\includegraphics[width=0.3\textwidth]{images/delegate.jpg}
 \end{center}
 
 Then the CPU can go on.
@@ -372,7 +375,7 @@ The I/O device will interact directly with memory.
 	\frametitle{Admiral Ackbar Says:}
 
 	\begin{center}
-		\includegraphics[width=0.8\textwidth]{images/itsatrap.jpg}
+		\includegraphics[width=0.65\textwidth]{images/itsatrap.jpg}
 	\end{center}
 
 \end{frame}
@@ -449,7 +452,7 @@ The I/O device will interact directly with memory.
 
 	Uncle Ben to Spiderman:
 	\begin{center}
-		\includegraphics[width=0.5\textwidth]{images/spiderman.jpg}
+		\includegraphics[width=0.3\textwidth]{images/spiderman.jpg}
 	\end{center}
 
 \end{frame}
@@ -485,7 +488,7 @@ The I/O device will interact directly with memory.
 	\frametitle{User Mode and Kernel Mode: Motivation}
 	
 	\begin{center}
-	\includegraphics[width=0.7\textwidth]{images/worldif.jpg}
+	\includegraphics[width=0.6\textwidth]{images/worldif.jpg}
 	\end{center}
 
 	Works if everyone plays nicely.
