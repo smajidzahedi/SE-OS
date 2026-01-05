@@ -1,8 +1,8 @@
-\input{../common/header}
+\input{header}
 
 \begin{document}
 
-\lecture{ 21 --- Dynamic Memory Allocation }{\term}{Jeff Zarnett}
+\lecture{ 21 --- Dynamic Memory Allocation }{\term}{Prepared by Jeff Zarnett, taught by Seyed Majid Zahedi}
 
 \section*{Dynamic Memory Allocation}
 By now you must surely be familiar with dynamic memory allocation from the perspective of the application developer. To create a new instance of an object in Java, for example, you use the \texttt{new} keyword and the runtime will come and garbage collect it when it is no longer needed. In C++ we have the \texttt{new} and \texttt{delete} operators to allocate and deallocate memory. The \texttt{new} and \texttt{delete} operators invoke the constructor and destructor, respectively. C works on memory at a lower level: to allocate a block of memory in C, there is \texttt{malloc()} and when finished, you return it with \texttt{free()}. This level is a lot closer to the way the operating system thinks about memory: just tell me how much you need and tell me when you are finished with it.

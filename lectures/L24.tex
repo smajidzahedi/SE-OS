@@ -1,8 +1,8 @@
-\input{../common/header}
+\input{header}
 
 \begin{document}
 
-\lecture{ 24 --- Virtual Memory }{\term}{Jeff Zarnett}
+\lecture{ 24 --- Virtual Memory }{\term}{Prepared by Jeff Zarnett, taught by Seyed Majid Zahedi}
 
 \section*{Virtual Memory}
 Even with paging and moving pages into and out of memory, there is a limit on what we can do with the system. Specifically, a program that requires more memory than the machine's physical memory cannot run. Maybe that seems ridiculous in the modern era of 4, 8, and 16~GB of memory, but server or supercomputer systems working on large datasets may require more memory than is available in the machine. Furthermore, when we have many programs running and a multiprocessor system, we could have a situation where the sum of memory requirements exceeds the available memory. It is less than ideal to have a processor waiting for something to do because a process that is otherwise ready to run cannot proceed because there are insufficient free frames for it to run.

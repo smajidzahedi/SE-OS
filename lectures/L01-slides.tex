@@ -2,11 +2,7 @@
 
 \title{Lecture 1 ---Introduction, Operating Systems, Security}
 
-\author{Jeff Zarnett \\ \small \texttt{jzarnett@uwaterloo.ca}}
-\institute{Department of Electrical and Computer Engineering \\
-  University of Waterloo}
-\date{\today}
-
+\input{author-list}
 
 \begin{document}
 
@@ -14,6 +10,12 @@
   \titlepage
 
  \end{frame}
+
+\begin{frame}
+\begin{center}
+	\includegraphics[width=0.3\textwidth]{images/se350}
+\end{center}
+\end{frame}
 
 \begin{frame}
 \frametitle{Course Syllabus}
@@ -25,18 +27,40 @@ As our first order of business, let's go over the course syllabus.
 \begin{frame}
 \frametitle{Collaborative Course}
 
-The source material for the SE~350 notes and slides is open-sourced via Github. 
+To access all course material, go to \url{https://eceweb.uwaterloo.ca/~smzahedi/crs/se350/}.
 
-If you find an error in the notes/slides, or have an improvement, go to \url{https://github.com/jzarnett/se350} and open an issue. 
+To enroll in the course on Piazza, go to \url{https://piazza.com/uwaterloo.ca/winter2026/se350}.
+
+To report errors in notes/slides, open an issue at \url{https://github.com/smajidzahedi/SE-OS}.
 
 If you know how to use \texttt{git} and \LaTeX, then you can go to the URL and submit a pull request (changes) for me to look at and incorporate!
 
+\end{frame}
 
+\begin{frame}
+\frametitle{Readings}
+
+There is no mandatory textbook for this course; the lecture notes should be sufficient.
+
+Optional references:
+\begin{itemize}
+	\item \href{https://ospp.cs.washington.edu/}{Operating Systems: Principles and Practice}
+	\item \href{https://pages.cs.wisc.edu/~remzi/OSTEP/}{Operating Systems: Three Easy Pieces}
+	\item \href{https://codex.cs.yale.edu/avi/os-book/OS10/}{Operating System Concepts}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\begin{center}
+		\Huge
+		Let's talk about labs!
+	\end{center}
 \end{frame}
 
 \begin{frame}
 \frametitle{Introduction to Operating Systems}
 
+\vspace{2em}
 \begin{quote}
 \textit{Operating systems are those programs that interface the machine with the applications programs. The main function of these systems is to dynamically allocate the shared system resources to the executing programs.}
 \end{quote}
@@ -46,15 +70,15 @@ If you know how to use \texttt{git} and \LaTeX, then you can go to the URL and s
 \end{frame}
 
 
-\begin{frame}
-\frametitle{Introduction to Operating Systems}
-
-\begin{center}
-	\includegraphics[width=.6\textwidth]{images/linux-user.jpg}
-\end{center}
-
-
-\end{frame}
+%\begin{frame}
+%\frametitle{Introduction to Operating Systems}
+%
+%\begin{center}
+%	\includegraphics[width=.4\textwidth]{images/linux-user.jpg}
+%\end{center}
+%
+%
+%\end{frame}
 
 
 \begin{frame}
@@ -72,7 +96,7 @@ Its job is to make it so other programs can run efficiently.
 \frametitle{Structural Diagram of a Modern Computer}
 
 \begin{center}
-\includegraphics[width=0.95\textwidth]{images/os-sw-hw.png}
+\includegraphics[width=0.45\textwidth]{images/os-hw}
 \end{center}
 
 \end{frame}
@@ -114,7 +138,7 @@ Multiple programs means some resources are shared.\\
 OS creates and enforces the rules so all can get along.
 
 \begin{center}
-	\includegraphics[width=0.4\textwidth]{images/sharing-is-caring.jpg}
+	\includegraphics[width=0.25\textwidth]{images/sharing-is-caring.jpg}
 \end{center}
 
 Sometimes processes want to co-operate and not compete.\\
@@ -128,9 +152,12 @@ Sometimes processes want to co-operate and not compete.\\
 Another goal may be to use the computer hardware efficiently.
 
 \begin{center}
-	\includegraphics[width=0.7\textwidth]{images/supercomputer.jpg}
+	\includegraphics[width=0.5\textwidth]{images/supercomputer.jpg}
 \end{center}
-\hfill Image Credit: Argonne National Laboratory
+
+\begin{center}
+	\footnotesize Image Credit: Argonne National Laboratory
+\end{center}
 
 Any moment when the supercomputer is not doing useful work is a waste.
 
@@ -158,7 +185,7 @@ There will be new hardware released, new types of hardware, new services added, 
 Evolution is constrained: a need to maintain compatibility for programs. 
 
 \begin{center}
-	\includegraphics[width=0.7\textwidth]{images/linus-angry.jpg}
+	\includegraphics[width=0.5\textwidth]{images/linus-angry.jpg}
 \end{center}
 
 \end{frame}
@@ -168,7 +195,7 @@ Evolution is constrained: a need to maintain compatibility for programs.
 \frametitle{Example: SimCity and Windows 95}
 
 \begin{center}
-	\includegraphics[width=0.85\textwidth]{images/simcity.png}
+	\includegraphics[width=0.6\textwidth]{images/simcity.png}
 \end{center}
 
 \end{frame}
@@ -179,7 +206,7 @@ Evolution is constrained: a need to maintain compatibility for programs.
 \frametitle{Security Now}
 
 \begin{center}
-	\includegraphics[width=0.9\textwidth]{images/security-team.png}
+	\includegraphics[width=0.65\textwidth]{images/security-team.png}
 \end{center}
 
 
@@ -208,7 +235,7 @@ There is a tradeoff with usability.
 You do NOT want to have to report a data breach.
 
 \begin{center}
-	\includegraphics[width=0.35\textwidth]{images/security-budget.png}
+	\includegraphics[width=0.25\textwidth]{images/security-budget.png}
 \end{center}
 
 
@@ -243,7 +270,7 @@ We'll take them in order.
 \frametitle{Protection}
 
 \begin{center}
-	\includegraphics[width=\textwidth]{images/protection.jpg}
+	\includegraphics[width=0.7\textwidth]{images/protection.jpg}
 \end{center}
 
 
@@ -282,7 +309,7 @@ Rules take effort to enforce.
 Exceptions are allowed and administrators can override policies!
 
 \begin{center}
-	\includegraphics[width=0.4\textwidth]{images/override.jpg}
+	\includegraphics[width=0.35\textwidth]{images/override.jpg}
 \end{center}
 
 Other kinds of rules can exist.

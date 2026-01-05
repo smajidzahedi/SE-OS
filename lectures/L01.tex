@@ -1,14 +1,14 @@
-\input{../common/header}
+\input{header}
 
 \begin{document}
 
-\lecture{ 1 --- Introduction, Operating Systems, Security }{\term}{Jeff Zarnett}
+\lecture{ 1 --- Introduction, Operating Systems, Security }{\term}{Prepared by Jeff Zarnett, taught by Seyed Majid Zahedi}
 
 \section*{About the Course}
 We'll start by reviewing the highlights of the class syllabus. Please read it carefully (it is available in Learn under Content $\rightarrow$ Overview). It contains a lot of important information about the class including: the lecture topics, the grading scheme, contact information for the course staff, and university policies.
 
 \paragraph{I C what you did there.}
-This course assumes that you have enough knowledge of C that we don't have to spend some time going over it. If that's an area of difficulty for you, the beginning of term is the best time to work on it. Just about everything we need is covered in the first topic of another course I teach, ECE~252, which you can find on Github also.
+This course assumes that you have enough knowledge of C that we don't have to spend some time going over it. If that's an area of difficulty for you, the beginning of term is the best time to work on it. Just about everything we need is covered in the first topic of another course I have taught before, ECE~252, which you can find on my website also.
 
 \section*{Introduction to Operating Systems}
 
@@ -23,12 +23,75 @@ time. Functions that were originally part of the operating system have migrated 
 
 \hfill - What Can Be Automated?: The Computer Science and Engineering Research Study, MIT Press, 1980
 
-\begin{center}
-\includegraphics[width=0.73\textwidth]{images/os-sw-hw.png}\\
-Structural diagram of a modern computer~\cite{osi}.
-\end{center}
+%\begin{center}
+%\includegraphics[width=0.73\textwidth]{images/os-sw-hw.png}\\
+%Structural diagram of a modern computer~\cite{osi}.
+%\end{center}
 
-An operating system (often abbreviated OS) is a piece of software that sits between the hardware of a computer and the applications (programs) that run on that computer. The OS does many different things and often has many (occasionally-conflicting) goals. It is responsible for seeing to it that other programs can operate efficiently, providing an environment for other programs, and collecting and reporting data about what is and has been happening. It also needs to enforce policies that are defined by system administrators.
+
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/os-hw0}
+        \caption{Software Layer}
+        \label{fig:os-hw0}
+    \end{subfigure} \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/os-hw1}
+        \caption{Hardware Layer}
+        \label{fig:os-hw1}
+    \end{subfigure} \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/os-hw2}
+        \caption{Interfaces}
+        \label{fig:os-hw2}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/os-hw3}
+        \caption{ISA Interface}
+        \label{fig:os-hw3}
+    \end{subfigure} \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/os-hw4}
+        \caption{ABI Interface}
+        \label{fig:os-hw4}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/os-hw5}
+        \caption{API Interface}
+        \label{fig:os-hw5}
+    \end{subfigure}
+    \caption{Layered architecture and key interfaces in an operating system~\cite{os-hw}}
+    \label{fig:layers}
+\end{figure}
+
+An operating system (often abbreviated OS) is a piece of software that sits between the hardware of a computer and the applications (programs) that run on that computer. Modern computing systems are structured in layers, each providing specific functionality and abstracting the complexity below it. Figure~\ref{fig:layers} illustrates key layers and interfaces within a typical operating system architecture.
+
+
+The software layer (Figure~\ref{fig:os-hw0}) consists of \textbf{application programs}, \textbf{libraries}, and the \textbf{operating system}. The OS itself contains critical components such as device drivers, the memory manager, and the scheduler. Device drivers enable communication with hardware, the memory manager handles allocation and virtual memory, and the scheduler decides which processes run and when. This layered approach allows applications to run efficiently without needing to manage low-level hardware details.
+
+
+The hardware layer (Figure~\ref{fig:os-hw1}) includes the \textbf{execution hardware}, \textbf{memory translation} mechanisms, a \textbf{system interconnect} (bus), and controllers for I/O devices and main memory. Memory translation, facilitated by both the OS and hardware, enables multiple applications to run simultaneously through virtual memory. This provides isolation and security between processes while optimizing physical memory usage.
+
+Each layer in the operating system architecture communicates with adjacent layers through a well-defined set of interfaces (Figure~\ref{fig:os-hw2}). By establishing clear boundaries and protocols, these interfaces enable complex systems to work reliably and predictably, ensuring that changes in one layer (such as hardware upgrades or OS modifications) don not require rewriting the entire software stack.
+
+The \textbf{Instruction Set Architecture (ISA)} (Figure~\ref{fig:os-hw3}) is a crucial interface, that defines the set of commands a processor can execute, along with registers, data types, addressing modes, and memory model. It serves as the boundary between software and hardware, allowing compiled code to run on compatible CPUs. Different ISAs (e.g., x86, ARM) require different machine code, making the ISA a fundamental specification for both hardware designers and software developers.
+
+The \textbf{Application Binary Interface (ABI)} (Figure~\ref{fig:os-hw4}) exists between application programs, the OS, and the execution hardware. An ABI specifies defines low-level details such as calling conventions (how function arguments and return values are passed), register usage, stack layout, binary formats, data type sizes, and system call interfaces. By standardizing these rules, an ABI ensures that separately compiled programs and libraries can work together correctly at the binary level.
+
+The \textbf{Application Programming Interface (API)} (Figure~\ref{fig:os-hw5}) provide developers with a set of functions and routines to interact with the OS and libraries without writing low-level code. Through APIs, programmers can make system calls, access hardware resources, and utilize pre-written libraries, significantly simplifying software development and enhancing portability across different platforms.
+
+The OS does many different things and often has many (occasionally-conflicting) goals. It is responsible for seeing to it that other programs can operate efficiently, providing an environment for other programs, and collecting and reporting data about what is and has been happening. It also needs to enforce policies that are defined by system administrators.
 
 
 
