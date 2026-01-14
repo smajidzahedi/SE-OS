@@ -17,7 +17,7 @@ Each process has a unique identifier in its process control block, and in UNIX w
 
 In a UNIX system, we can obtain a list of processes at any time with the \texttt{ps} command. The diagram illustrates that each user, when logging in, spawns a \texttt{login} process (and an administrator can log people out by killing their \texttt{login} process... not that this is necessarily a good way to do it). The user's shell (these days, almost always \texttt{bash}, the Bourne Again Shell) is then spawned from \texttt{login}. That shell provides the command line interface where the user can enter a command.
 
-When you issue a command, like \texttt{ls} or \texttt{top} (table of processes), the new process is created and the shell will \texttt{wait} on that process to finish (in the case of \texttt{ls}) or for the user to tell it to exit (\texttt{top}); when it does, control goes back to the shell and you get presented with the prompt again (e.g., \texttt{jz@Loki:\~{}/\$}). This would, on its face, seem kind of limiting -- do I have to log in to the system in a second terminal window to run two things at a time? The answer is no, and there are two ways to get around it.
+When you issue a command, like \texttt{ls} or \texttt{top} (table of processes), the new process is created and the shell will \texttt{wait} on that process to finish (in the case of \texttt{ls}) or for the user to tell it to exit (\texttt{top}); when it does, control goes back to the shell and you get presented with the prompt again (e.g., \texttt{se350@Loki:\~{}/\$}). This would, on its face, seem kind of limiting -- do I have to log in to the system in a second terminal window to run two things at a time? The answer is no, and there are two ways to get around it.
 
 The first thing we can do is tell the shell we want the task to run in the background. To do that, add to the command the \texttt{\&} symbol, like so:
 
@@ -85,10 +85,10 @@ When executed, this code starts up and attempts to spawn a child process. Let us
 
 Thus, the output is:
 \begin{verbatim}
-jz@Freyja:~/fork$ ./fork 
+se350@Freyja:~/fork$ ./fork 
 fork   fork.c
 Child Complete with status: 0
-jz@Freyja:~/fork$ 
+se350@Freyja:~/fork$ 
 \end{verbatim}
 
 Or, to represent this visually:

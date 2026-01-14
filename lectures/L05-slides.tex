@@ -44,7 +44,7 @@
 	\frametitle{Linux Process Tree}
 
 	\begin{center}
-		\includegraphics[width=\textwidth]{images/linux-process-tree.pdf}
+		\includegraphics[width=0.7\textwidth]{images/linux-process-tree.pdf}
 	\end{center}
 
 \end{frame}
@@ -69,7 +69,7 @@
 	\quad Or wait for the user to tell it to exit (\texttt{top})
 
 	When it does, control goes back to the shell.\\
-	\quad You get presented with the prompt again (e.g., \texttt{jz@Loki:\~{}/\$}).
+	\quad You get presented with the prompt again (e.g., \texttt{se350@Loki:\~{}/\$}).
 
 	Must I log in to the system in a second terminal window to run two things at a time?
 
@@ -177,7 +177,7 @@
 	Note: \texttt{fork} creates a new process as a copy of itself.
 
 	\begin{center}
-		\includegraphics[width=0.4\textwidth]{images/spiderman-2.jpg}
+		\includegraphics[width=0.3\textwidth]{images/spiderman-2.jpg}
 	\end{center}
 
 	Both parent and child continue after that statement.
@@ -250,10 +250,10 @@ int main( int argc, char** argv ) {
 
 	Thus, the output is:
 	\begin{verbatim}
-jz@Freyja:~/fork$ ./fork 
+se350@Freyja:~/fork$ ./fork
 fork   fork.c
 Child Complete with status: 0
-jz@Freyja:~/fork$ 
+se35@Freyja:~/fork$
 \end{verbatim}
 
 
@@ -380,9 +380,11 @@ int main( int argc, char** argv ) {
 	\frametitle{Fork Bomb}
 
 	\begin{center}
-		\includegraphics[width=\textwidth]{images/forkbomb.png}
+		\includegraphics[width=0.65\textwidth]{images/forkbomb.png}
 	\end{center}
-	\hfill Image Credit: Wikipedia user Dake
+	\begin{center}
+		\tiny Image Credit: Wikipedia user Dake
+	\end{center}
 
 \end{frame}
 
@@ -421,7 +423,7 @@ int main( int argc, char** argv ) {
 	\frametitle{Gondor Calls For Aid}
 
 	\begin{center}
-		\includegraphics[width=\textwidth]{images/beacon_gondor.png}
+		\includegraphics[width=0.7\textwidth]{images/beacon_gondor.png}
 	\end{center}
 
 \end{frame}
