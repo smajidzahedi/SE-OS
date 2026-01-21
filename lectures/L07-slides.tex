@@ -16,7 +16,7 @@
 	\frametitle{Network Communication}
 
 	\begin{center}
-		\includegraphics[width=0.7\textwidth]{images/seriesoftubes.jpg}\\
+		\includegraphics[width=0.5\textwidth]{images/seriesoftubes.jpg}\\
 		Former US Senator Ted Stevens
 	\end{center}
 
@@ -32,7 +32,7 @@
 	The network is frequently portrayed as a mysterious cloud blob:
 
 	\begin{center}
-		\includegraphics[width=0.35\textwidth]{images/iCloud.png}\\
+		\includegraphics[width=0.25\textwidth]{images/iCloud.png}\\
 		The Apple iCloud icon
 	\end{center}
 
@@ -49,7 +49,7 @@
 	There are two ways we can communicate: datagrams and connection streams.
 
 	\begin{center}
-		\includegraphics[width=0.3\textwidth]{images/electrical-outlet.jpg}
+		\includegraphics[width=0.2\textwidth]{images/electrical-outlet.jpg}
 	\end{center}
 
 \end{frame}
@@ -97,7 +97,7 @@ int socket( int domain, int type, int protocol )
 	Consider a 4-byte integer. Two possible organizations:
 
 	\begin{center}
-		\includegraphics[width=0.25\textwidth]{images/endian}
+		\includegraphics[width=0.3\textwidth]{images/endian}
 	\end{center}
 
 	Network protocol specifies the use of big-endian!
@@ -184,10 +184,10 @@ addr.sin_addr.s_addr = htonl( INADDR_ANY );
 	\frametitle{Address Lookup}
 
 	\begin{center}
-		\includegraphics[width=0.6\textwidth]{images/terminator-phonebook1.jpg}
+		\includegraphics[width=0.5\textwidth]{images/terminator-phonebook1.jpg}
 	\end{center}
 	\begin{center}
-		\includegraphics[width=0.6\textwidth]{images/terminator-phonebook2.jpg}
+		\includegraphics[width=0.5\textwidth]{images/terminator-phonebook2.jpg}
 	\end{center}
 
 
@@ -354,7 +354,7 @@ int status = connect(sockfd, res->ai_addr, res->ai_addrlen);
 	\frametitle{Bind, Listen, Accept}
 
 	\begin{center}
-		\includegraphics[width=0.5\textwidth]{images/cheezburger.jpeg}
+		\includegraphics[width=0.55\textwidth]{images/cheezburger.jpeg}
 	\end{center}
 
 \end{frame}
@@ -521,7 +521,7 @@ close( socketfd );
 	\frametitle{Connection Established}
 
 	\begin{center}
-		\includegraphics[width=0.7\textwidth]{images/data-connection.jpg}
+		\includegraphics[width=0.5\textwidth]{images/data-connection.jpg}
 	\end{center}
 
 	We are finally ready for the client and server to communicate.
