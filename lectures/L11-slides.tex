@@ -19,7 +19,7 @@
 	The thread that we are going to cancel is called the \textit{target}.
 
 	\begin{center}
-		\includegraphics[width=0.5\textwidth]{images/canceled_flight.jpg}
+		\includegraphics[width=0.3\textwidth]{images/canceled_flight.jpg}
 	\end{center}
 
 \end{frame}
@@ -73,7 +73,7 @@ pthread_setcanceltype( int type, int *oldtype )
 	Sometimes a thread could die before it has cleaned up.
 
 	\begin{center}
-		\includegraphics[width=0.5\textwidth]{images/tenthdoctor.jpeg}
+		\includegraphics[width=0.3\textwidth]{images/tenthdoctor.jpeg}
 	\end{center}
 
 	This can leave memory allocated, things locked...
@@ -150,7 +150,7 @@ void* do_work( void* argument ) {
 	For the sake of simplicity: we are just going to count!
 
 	\begin{center}
-		\includegraphics[width=0.6\textwidth]{images/countvoncount.jpg}
+		\includegraphics[width=0.4\textwidth]{images/countvoncount.jpg}
 	\end{center}
 
 
@@ -225,7 +225,7 @@ void *runner( void *param ) {
 	Let's do a different take on that program.
 
 	\begin{center}
-		\includegraphics[width=0.6\textwidth]{images/sesamestreet.png}
+		\includegraphics[width=0.4\textwidth]{images/sesamestreet.png}
 	\end{center}
 
 \end{frame}
@@ -367,7 +367,7 @@ int main( int argc, char** argv ) {
 	\frametitle{Chest Day Best Day}
 
 	\begin{center}
-		\includegraphics[width=0.5\textwidth]{images/chestdaybestday.png}
+		\includegraphics[width=0.3\textwidth]{images/chestdaybestday.png}
 	\end{center}
 
 	``Can I work in with you?''
@@ -393,7 +393,7 @@ int main( int argc, char** argv ) {
 	\frametitle{Single Core Execution}
 
 	\begin{center}
-		\includegraphics[width=\textwidth]{images/single-core-execution.png}
+		\includegraphics[width=0.7\textwidth]{images/single-core-execution.png}
 	\end{center}
 
 \end{frame}
@@ -405,7 +405,7 @@ int main( int argc, char** argv ) {
 	Time slicing will still occur, if necessary:
 
 	\begin{center}
-		\includegraphics[width=\textwidth]{images/dual-core-execution.png}
+		\includegraphics[width=0.7\textwidth]{images/dual-core-execution.png}
 	\end{center}
 
 
@@ -417,6 +417,29 @@ int main( int argc, char** argv ) {
 	\frametitle{Parallelism}
 
 	Multiple threads at the same time = tasks completed faster?
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{Merge Sort Example}
+
+	Recall from data structures and algorithms the concept of merge sort.
+
+	This is a divide-and-conquer algorithm like binary search.
+
+	Split the array of values up into smaller pieces, sort those, and then merge the smaller pieces together to have sorted data.
+
+
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{Merge Sort Example}
+
+	\begin{center}
+		\includegraphics[width=0.55\textwidth]{images/multithread-sort}
+	\end{center}
+
 
 \end{frame}
 
@@ -438,7 +461,7 @@ int main( int argc, char** argv ) {
 	\frametitle{Heard, Chef!}
 
 	\begin{center}
-		\includegraphics[width=\textwidth]{images/lamb-sauce.jpg}
+		\includegraphics[width=0.7\textwidth]{images/lamb-sauce.jpg}
 	\end{center}
 
 \end{frame}
@@ -474,7 +497,9 @@ int main( int argc, char** argv ) {
 	Amdahl's Law:
 
 	\begin{center}
-		speedup $\leq$ {\huge $\frac{1}{S + \frac{1-S}{N}}$}
+		\[
+			\text{speedup} \leq \frac{1}{S + \frac{1-S}{N}}
+		\]
 	\end{center}
 
 \end{frame}
@@ -530,28 +555,13 @@ int main( int argc, char** argv ) {
 
 
 \begin{frame}
-	\frametitle{Merge Sort Example}
-
-	Recall from data structures and algorithms the concept of merge sort.
-
-	This is a divide-and-conquer algorithm like binary search.
-
-	Split the array of values up into smaller pieces, sort those, and then merge the smaller pieces together to have sorted data.
-
-
-\end{frame}
-
-
-\begin{frame}
-	\frametitle{Merge Sort Example}
-
+	\frametitle{Speedup as Function of \# Processors}
 	\begin{center}
-		\includegraphics[width=0.75\textwidth]{images/multithread-sort.png}
+		\includegraphics[width=0.55\textwidth]{images/AmdahlsLaw}
 	\end{center}
-
-
+	\begin{center}
+		\tiny Image credit: wikipedia
+	\end{center}
 \end{frame}
-
-
 
 \end{document}
