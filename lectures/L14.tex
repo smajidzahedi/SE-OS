@@ -29,7 +29,7 @@ Recall from earlier the example with Alice and Bob at the power plant. This was 
 If $B$ gets to the \texttt{wait} statement first, it will be blocked (as the semaphore is 0) and cannot proceed until someone posts on that semaphore. When $A$ does call \texttt{post}, then $B$ may proceed. If instead $A$ gets to the \texttt{post} statement first, it will post and the semaphore value will be 1. Then, when $B$ gets to the \texttt{wait} statement, it can proceed without delay. Regardless of the actual order that the threads run, we are certain that statement A1 will execute before statement B2.
 
 Note that this is a situation where it makes sense for a thread to post a semaphore even if it is not the thread that waited on that semaphore. Thus, sometimes, the semaphore is appropriate and the mutex structure is not necessary in every circumstance.
-
+\newpage
 \subsection*{Rendezvous}
 The rendezvous is an expansion of the signalling pattern so that it works both ways: two threads should be at the same point before either of them may proceed (they ``meet up''). Given the following code:
 
@@ -38,7 +38,7 @@ The rendezvous is an expansion of the signalling pattern so that it works both w
 	\begin{verbatim}
 	1. Statement A1
 	2. Statement A2
-  \end{verbatim}
+  	\end{verbatim}
 	\columnbreak
 	\textbf{Thread B}\vspace{-2em}
 	\begin{verbatim}
@@ -145,9 +145,9 @@ The mutex semaphore is originally initialized to 1 (unlike the previous examples
 Note that both threads $A$ and $B$ are identical here, which was not always the case in previous examples. This is a \textit{symmetric} solution. It is easier to make predictions about the behaviour of the threads when they all do the same thing. If the different threads have different sections of code, they are \textit{asymmetric}. The symmetric solutions very often scale well: we could have arbitrarily many threads executing in that same pattern, as long as they all wait on the semaphore before entering the critical section, we can be sure mutual exclusion is enforced.
 
 \subsection*{Multiplex}
-In addition to the binary semaphore, we also discussed the general semaphore. If the general semaphore is initialized to $n$, then at most $n$ threads can be in the critical section at a time. This pattern is more common than it might appear at first glance. Restaurants have a certain number of tables and seats. If more people wish to dine than there are seats available, those customers must wait until some seats become available (other customers leave). Restaurants generally want to pack in as many seats as possible, but fire safety regulations set a maximum occupancy for a given space.
+In addition to the mutex semaphore, we also discussed the general semaphore. If the general semaphore is initialized to $n$, then at most $n$ threads can be in the critical section at a time. This pattern is more common than it might appear at first glance. Restaurants have a certain number of tables and seats. If more people wish to dine than there are seats available, those customers must wait until some seats become available (other customers leave). Restaurants generally want to pack in as many seats as possible, but fire safety regulations set a maximum occupancy for a given space.
 
-In a computer related example, suppose that the system has a problem that when too many concurrent database requests are happening. The queries become slow and eventually time out. A potential solution is to protect all database accesses with a binary semaphore, so only one database query can run at any time. Analysis may reveal that this is too restrictive a policy; perhaps we can execute 5 queries concurrently without any slowdown. Then initialize the semaphore with a value of 5, allowing at most 5 threads into the critical section at any time.
+In a computer related example, suppose that the system has a problem that when too many concurrent database requests are happening. The queries become slow and eventually time out. A potential solution is to protect all database accesses with a mutex semaphore, so only one database query can run at any time. Analysis may reveal that this is too restrictive a policy; perhaps we can execute 5 queries concurrently without any slowdown. Then initialize the semaphore with a value of 5, allowing at most 5 threads into the critical section at any time.
 
 Now, to represent this in pseudocode. This is a symmetric solution, so it will work for arbitrarily many threads (and showing $A$ and $B$ side by side is not necessary).
 
@@ -213,7 +213,7 @@ This is a solution that allows all of the $n$ threads to proceed (none get stuck
 
 This pattern of a wait followed immediately by a post is a common pattern called a \textit{turnstile}. The analogy should be familiar to anyone who has travelled by subway (e.g., in Toronto or NYC): a turnstile allows one person at a time to go through. A turnstile pattern allows one thread at a time to proceed through, but can be locked to bar all threads from proceeding. Initially the turnstile in the above example is locked, and the $n$th thread unlocks it and permits all $n$ threads to go through.
 
-Alert readers may have noticed something that causes some minor distress: on line 4 in this solution (and the previous, suboptimal one), we are reading the value of \texttt{count}, a shared variable, without the protection of a semaphore. Is this dangerous? Yes, but the alternative is, in this specific instance, worse. Consider this instead:
+Alert readers may have noticed something that causes some minor distress: on line 4 in this solution (and the previous, suboptimal one), we are reading the value of \texttt{count}, a shared variable, without the protection of a semaphore. Is this dangerous? Yes, but some alternatives could be worse. For instance, consider the following:
 
 \textbf{Thread \textit{K}}\vspace{-2em}
 \begin{verbatim}

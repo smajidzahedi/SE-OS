@@ -30,7 +30,7 @@
 	\frametitle{So Text Me, Maybe}
 
 	\begin{center}
-		\includegraphics[width=0.9\textwidth]{images/texting.jpeg}
+		\includegraphics[width=0.7\textwidth]{images/texting.jpeg}
 	\end{center}
 
 
@@ -53,13 +53,13 @@
 		\begin{verbatim}
 	1. Statement A1
 	2. post( sem )
-  \end{verbatim}
+  		\end{verbatim}
 		\columnbreak
-		\textbf{Thread B}
+		\textbf{Thread B}\vspace{-2em}
 		\begin{verbatim}
 	1. wait( sem )
 	2. Statement B2
-  \end{verbatim}
+  		\end{verbatim}
 	\end{multicols}
 	\vspace{-2em}
 
@@ -86,7 +86,7 @@
 	\frametitle{Rendezvous}
 
 	\begin{center}
-		\includegraphics[width=0.5\textwidth]{images/nasa-rendezvous.jpg}
+		\includegraphics[width=0.3\textwidth]{images/nasa-rendezvous.jpg}
 	\end{center}
 
 
@@ -107,13 +107,13 @@
 		\begin{verbatim}
 	1. Statement A1
 	2. Statement A2
-  \end{verbatim}
+  		\end{verbatim}
 		\columnbreak
-		\textbf{Thread B}
+		\textbf{Thread B}\vspace{-2em}
 		\begin{verbatim}
 	1. Statement B1
 	2. Statement B2
-  \end{verbatim}
+  		\end{verbatim}
 	\end{multicols}
 	\vspace{-2em}
 
@@ -144,15 +144,15 @@
 	2. wait( bArrived )
 	3. post( aArrived )
 	4. Statement A2
-  \end{verbatim}
+  		\end{verbatim}
 		\columnbreak
-		\textbf{Thread B}
+		\textbf{Thread B}\vspace{-2em}
 		\begin{verbatim}
 	1. Statement B1
 	2. wait( aArrived )
 	3. post( bArrived )
 	4. Statement B2
-  \end{verbatim}
+  		\end{verbatim}
 	\end{multicols}
 	\vspace{-2em}
 
@@ -198,15 +198,15 @@
 	2. post( aArrived )
 	3. wait( bArrived )
 	4. Statement A2
-  \end{verbatim}
+  		\end{verbatim}
 		\columnbreak
-		\textbf{Thread B}
+		\textbf{Thread B}\vspace{-2em}
 		\begin{verbatim}
 	1. Statement B1
 	2. post( bArrived )
 	3. wait( aArrived )
 	4. Statement B2
-  \end{verbatim}
+  		\end{verbatim}
 	\end{multicols}
 	\vspace{-2em}
 
@@ -239,15 +239,15 @@
 	2. wait( bArrived )
 	3. post( aArrived )
 	4. Statement A2
-  \end{verbatim}
+  		\end{verbatim}
 		\columnbreak
-		\textbf{Thread B}
+		\textbf{Thread B}\vspace{-2em}
 		\begin{verbatim}
 	1. Statement B1
 	2. post( bArrived )
 	3. wait( aArrived )
 	4. Statement B2
-  \end{verbatim}
+  		\end{verbatim}
 	\end{multicols}
 	\vspace{-2em}
 
@@ -289,7 +289,7 @@
 	3. wait( bArrived )
 	4. wait( cArrived )
 	5. Statement A2
-  \end{verbatim}
+  		\end{verbatim}
 		\columnbreak
 		\textbf{Thread B}
 		\begin{verbatim}
@@ -298,16 +298,16 @@
 	3. wait( aArrived )
 	4. wait( cArrived )
 	5. Statement B2
-  \end{verbatim}
+  		\end{verbatim}
   		\columnbreak
-		\textbf{Thread C}
+		\textbf{Thread C}\vspace{-2em}
 		\begin{verbatim}
 	1. Statement C1
 	2. post( cArrived )
 	3. wait( aArrived )
 	4. wait( bArrived )
 	5. Statement C2
-  \end{verbatim}
+  		\end{verbatim}
 	\end{multicols}
 	\vspace{-2em}
 
@@ -319,7 +319,7 @@ Does this work?
 \begin{frame}
 \frametitle{Too Much Waiting}
 
-No -- this will also lead to a deadlock. 
+No -- this will also lead to a deadlock.
 
 A \texttt{post( aArrived )} unblocks one thread waiting for A...\\
 \quad But now there are two threads waiting for it!
@@ -356,7 +356,7 @@ Analysis tool: look at the number of wait and post statements.\\
 	6. Statement B2
   \end{verbatim}
   		\columnbreak
-		\textbf{Thread C}
+		\textbf{Thread C}\vspace{-2em}
 		\begin{verbatim}
 	1. Statement C1
 	2. post( cArrived )
@@ -378,7 +378,7 @@ How about now?
 
 This works! Our wait and post statements are balanced.
 
-You can imagine that the complexity increases if there are more threads... 
+You can imagine that the complexity increases if there are more threads...
 
 And adding thread D would mean changing A, B, C as well... Not ideal...
 
@@ -389,7 +389,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 	\frametitle{Waiting Our Turn...}
 
 	\begin{center}
-		\includegraphics[width=0.9\textwidth]{images/waiting-in-line.jpg}
+		\includegraphics[width=0.7\textwidth]{images/waiting-in-line.jpg}
 	\end{center}
 
 \end{frame}
@@ -400,7 +400,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 
 	We saw previously the motivation and concept of mutual exclusion through messages in the linked list example.
 
-	The general form in pseudocode is of course:
+	The general form in pseudocode for \texttt{mutex} semaphore (i.e., semaphore initialized to 1) is of course:
 
 	\begin{multicols}{2}
 		\textbf{Thread A}
@@ -410,12 +410,12 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 	3. post( mutex )
   \end{verbatim}
 		\columnbreak
-		\textbf{Thread B}
+		\textbf{Thread B}\vspace{-2em}
 		\begin{verbatim}
 	1. wait( mutex )
 	2. critical section
 	3. post( mutex )
-  \end{verbatim}
+  		\end{verbatim}
 	\end{multicols}
 	\vspace{-2em}
 
@@ -425,11 +425,9 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 \begin{frame}
 	\frametitle{Mutual Exclusion}
 
-	The mutex semaphore is originally initialized to 1.
-
 	Whichever thread gets to the \texttt{wait} statement first will proceed immediately and not be blocked at all.
 
-	If the semaphore were initialized to 0 then neither thread could ever get to the \texttt{post} statement or ever get into the critical section (deadlock).
+	If \texttt{mutex} semaphore were initialized to 0 then neither thread could ever get to the \texttt{post} statement or ever get into the critical section (deadlock).
 
 
 \end{frame}
@@ -452,7 +450,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 
 \begin{frame}
 	\frametitle{Multiplex}
-	In addition to the binary semaphore, we also discussed the general semaphore.
+	In addition to the mutex semaphore, we also discussed the general semaphore.
 
 	If the general semaphore is initialized to $n$, then at most $n$ threads can be in the critical section at a time.
 
@@ -471,7 +469,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 
 	The queries become slow and eventually time out.
 
-	A potential solution is to protect all database accesses with a binary semaphore, so only one database query can run at any time.
+	A potential solution is to protect all database accesses with a mutex semaphore, so only one database query can run at any time.
 
 	Analysis may reveal that this is too restrictive a policy; perhaps we can execute 5 queries concurrently without any slowdown.
 
@@ -491,7 +489,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 	1. wait( mutex )
 	2. critical section
 	3. post( mutex )
-  \end{verbatim}
+  	\end{verbatim}
 	\vspace{-2em}
 
 	This looks exactly like the solution for mutual exclusion, as it should.
@@ -507,7 +505,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 	\frametitle{That's One Kind of Barrier}
 
 	\begin{center}
-		\includegraphics[width=0.9\textwidth]{images/fence-barrier.jpg}
+		\includegraphics[width=0.7\textwidth]{images/fence-barrier.jpg}
 	\end{center}
 
 \end{frame}
@@ -533,7 +531,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 \begin{frame}
 	\frametitle{Barrier}
 
-	Thus we will have a semaphore, initialized to 1, called \texttt{mutex} to protect that counter.
+	Thus, we will have a semaphore, initialized to 1, called \texttt{mutex} to protect that counter.
 
 	Then we will have a second semaphore, \texttt{barrier} that will be the place where threads wait until the $n$th thread arrives.
 
@@ -552,7 +550,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 	5.     post( barrier )
 	6. end if
 	7. wait( barrier )
-  \end{verbatim}
+  	\end{verbatim}
 	\vspace{-2em}
 
 
@@ -577,7 +575,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 	\frametitle{Barrier Solution 2}
 
 	\begin{center}
-		\includegraphics[width=0.7\textwidth]{images/oprah.jpg}
+		\includegraphics[width=0.5\textwidth]{images/oprah.jpg}
 	\end{center}
 
 
@@ -600,7 +598,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 	7.     end for
 	8. end if
 	9. wait( barrier )
-  \end{verbatim}
+  	\end{verbatim}
 	\vspace{-2em}
 
 
@@ -639,7 +637,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 	6. end if
 	7. wait( barrier )
 	8. post( barrier )
-  \end{verbatim}
+  	\end{verbatim}
 	\vspace{-2em}
 
 
@@ -649,7 +647,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 \begin{frame}
 	\frametitle{This Has a Name!}
 	\begin{center}
-		\includegraphics[width=0.9\textwidth]{images/nyc-subway-turnstile.jpg}
+		\includegraphics[width=0.7\textwidth]{images/nyc-subway-turnstile.jpg}
 	\end{center}
 
 \end{frame}
@@ -676,9 +674,9 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 
 	Is this dangerous?
 
-	Yes, but the alternative is, in this specific instance, worse.
+	Yes, but some alternatives could be worse.
 
-	Consider this instead:
+	For instance, consider this:
 
 	\textbf{Thread \textit{K}}\vspace{-2em}
 	\begin{verbatim}
@@ -690,7 +688,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 	6. wait( barrier )
 	7. post( barrier )
 	8. post( mutex )
-  \end{verbatim}
+  	\end{verbatim}
 	\vspace{-2em}
 
 \end{frame}
@@ -757,7 +755,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 	13. if count == 0
 	14.     wait( turnstile )
 	15. end if
-  \end{verbatim}
+  	\end{verbatim}
 	\vspace{-2em}
 
 \end{frame}
@@ -796,7 +794,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 	13.     wait( turnstile )
 	14. end if
 	15. post( mutex )
-  \end{verbatim}
+  	\end{verbatim}
 	\vspace{-2em}
 
 \end{frame}
@@ -822,7 +820,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 	\frametitle{Reusable Barrier Visually}
 
 	\begin{center}
-		\includegraphics[width=\textwidth]{images/reusable-barrier.png}
+		\includegraphics[width=0.8\textwidth]{images/reusable-barrier.png}
 	\end{center}
 
 	This solution can also be called a \alert{two-phase barrier} because all threads have to wait twice: once at each turnstile.
@@ -832,6 +830,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 \begin{frame}[fragile]
 	\frametitle{Reusable Barrier Solution 3}
 	\vspace{-0.5em}
+	{\small
 	\textbf{Thread \textit{K}}\vspace{-0.5em}
 	\begin{verbatim}
 	 1. wait( mutex )
@@ -853,7 +852,7 @@ And adding thread D would mean changing A, B, C as well... Not ideal...
 	17. post( mutex )
 	18. wait( turnstile2 )
 	19. post( turnstile2 )
-  \end{verbatim}
+  	\end{verbatim}}
 	\vspace{-2em}
 
 
