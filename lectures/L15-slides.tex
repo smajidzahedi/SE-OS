@@ -1,6 +1,6 @@
 \input{configuration}
 
-\title{Lecture 15 --- The Producer-Consumer Problem }
+\title{Lecture 15 --- Monitors }
 
 \input{author-list}
 
@@ -11,383 +11,58 @@
 
 \end{frame}
 
+\begin{frame}
+	\frametitle{What's Wrong With You?}
+
+	As we have seen so far, using semaphores correctly is not straightforward.
+
+	For example, changing the order of \texttt{wait} and \texttt{post} operations can easily lead to deadlock.
+
+	Semaphores serve a dual purpose: they are used for both \alert{mutual exclusion} and \alert{scheduling constraints}.
+
+\end{frame}
 
 \begin{frame}
-	\frametitle{Monty Python and the Holy Compiler}
+	\frametitle{Who Said What?}
 
+	Dijkstra himself noted this:
+
+	\vspace{1em}
+	\begin{displayquote}
+    	During system conception it transpired that we used the semaphores in two completely different ways.
+    	The difference is so marked that, looking back, one wonders whether it was really fair to present the two ways as uses of the very same primitives.
+    	On the one hand, we have the semaphores used for mutual exclusion, on the other hand, the private semaphores.
+	\end{displayquote}
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{Monitors}
 	\begin{center}
-		\includegraphics[width=0.4\textwidth]{images/three-riddles.jpg}
+		\includegraphics[width=0.45\textwidth]{images/monitor.jpg}
 	\end{center}
 
-	The producer-consumer problem, the readers-writers problem, and the dining philosophers problem.
-
-\end{frame}
-
-
-\begin{frame}
-	\frametitle{Produce and Consume}
-
-	First: the producer-consumer problem, also sometimes called the bounded-buffer-problem.
-
-	Two processes share a common buffer that is of fixed size.
-
-	One process is the producer: it generates data and puts it in the buffer.
-
-	The other is the consumer: it takes data out of the buffer.
-
-	This problem can be generalized to have $p$ producers and $c$ consumers.
+	Uh... wait... this isn't the right kind.
 
 \end{frame}
 
 \begin{frame}
-	\frametitle{Consume, Obey}
+	\frametitle{What's a Monitor?}
 
-	Rules:
-	\begin{itemize}
-		\item The buffer is of capacity \texttt{BUFFER\_SIZE}.
-		\item Cannot write into a full buffer
-		\item Cannot read from an empty buffer
-	\end{itemize}
+	A monitor consists of a \texttt{mutex} (lock) and at least one \texttt{condition variable} (CV).
 
-	To keep track of the number of items in the buffer, we will have some variable \texttt{count}.
+	Multiple CVs can be associated with the same mutex, but not vice versa.
 
-	This is a shared variable, so we need a mutex for it.
+	The mutex is used for mutual exclusion, and CVs are used for scheduling constraints.
+
+	We will next look into pthread mutex and CVs.
 
 \end{frame}
-
-
-\begin{frame}[fragile]
-	\frametitle{Are We There Yet?}
-
-	If busy-waiting is permitted, we can get away with one mutex.
-
-	Shown below is one loop iteration for each of the producer \& consumer.
-		{\small
-			\begin{multicols}{2}
-				\textbf{Producer}
-				\begin{verbatim}
-	 1. [produce item]
-	 2. added = false
-	 3. while added is false
-	 4.    wait( mutex )
-	 5.    if count < BUFFER_SIZE
-	 6.        [add item to buffer]
-	 7.        count++
-	 8.        added = true
-	 9.    end if
-	10.    post( mutex )
-	11. end while
-  \end{verbatim}
-				\columnbreak
-				\textbf{Consumer}
-				\begin{verbatim}
-	 1. removed = false
-	 2. while removed is false
-	 3.    wait( mutex )
-	 4.    if count > 0
-	 5.        [remove item from buffer]
-	 6.        count--
-	 7.        removed = true
-	 8.    end if
-	 9.    post( mutex )
-	10. end while
-	11. [consume item]
-  \end{verbatim}
-			\end{multicols}
-			\vspace{-2em}
-		}
-
-\end{frame}
-
-
-\begin{frame}
-	\frametitle{No Busy-Waiting}
-
-	While this accomplishes what we want, it is inefficient.
-
-	Let's add a new rule that says we want to avoid busy-waiting.
-
-	The producer gets blocked if there are no available spaces.
-
-	The consumer gets blocked if there's nothing to consume.
-
-\end{frame}
-
-
-\begin{frame}
-	\frametitle{When You Lose Track of the Number of Sets...}
-
-	\begin{center}
-		\includegraphics[width=0.7\textwidth]{images/counting.jpeg}
-	\end{center}
-
-\end{frame}
-
-
-\begin{frame}
-	\frametitle{Use Semaphores To Count}
-
-	Use 2 general semaphores, each with maximum value of \texttt{BUFFER\_SIZE}.
-
-	\texttt{items}: starts at 0 and represents how many spaces in the buffer are full.
-
-	\texttt{spaces}: starts at \texttt{BUFFER\_SIZE} and represents the number of spaces in the buffer that are currently empty.
-
-\end{frame}
-
-
-\begin{frame}[fragile]
-	\frametitle{Producer-Consumer with Waiting}
-
-	\begin{multicols}{2}
-		\textbf{Producer}
-		\begin{verbatim}
-	 1. [produce item]
-	 2. wait( spaces )
-	 3. [add item to buffer]
-	 4. post( items )
-  \end{verbatim}
-		\columnbreak
-		\textbf{Consumer}
-		\begin{verbatim}
-	 1. wait( items )
-	 2. [remove item from buffer]
-	 3. post( spaces )
-	 4. [consume item]
-  \end{verbatim}
-	\end{multicols}
-	\vspace{-2em}
-
-	Does this work?
-
-	Are there any implicit assumptions?
-
-\end{frame}
-
-\begin{frame}
-	\frametitle{Assumptions made? I assume so...}
-
-	(1) The actions of adding an item to the buffer and removing an item from the buffer add to and remove from the ``next'' space.
-
-	(2) There is exactly one producer and one consumer in the system.
-
-	If we have two producers, for example, they might be trying to write into the same space at the same time, and this would be a problem.
-
-
-\end{frame}
-
-
-\begin{frame}[fragile]
-	\frametitle{Mmmmmmmulti-Consume!}
-
-	To generalize this solution to allow multiple producers and multiple consumers, we need a \texttt{mutex}.
-
-	\begin{multicols}{2}
-		\textbf{Producer}
-		\begin{verbatim}
-	 1. [produce item]
-	 2. wait( spaces )
-	 3. wait( mutex )
-	 4. [add item to buffer]
-	 5. post( mutex )
-	 6. post( items )
-  \end{verbatim}
-		\columnbreak
-		\textbf{Consumer}
-		\begin{verbatim}
-	 1. wait( items )
-	 2. wait( mutex )
-	 3. [remove item from buffer]
-	 4. post( mutex )
-	 5. post( spaces )
-	 6. [consume item]
-  \end{verbatim}
-	\end{multicols}
-	\vspace{-2em}
-
-	Does this work?
-
-	Anything... worrying?
-
-\end{frame}
-
-
-\begin{frame}
-	\frametitle{Cancel Red Alert}
-
-	The hint that we might have a problem is one \texttt{wait} statement inside another.
-
-	But it doesn't guarantee a problem...
-
-	We should be able to reason through why there is (or isn't) a problem.
-
-\end{frame}
-
-\begin{frame}[fragile]
-	\frametitle{Alternative Solution: PC}
-
-	\begin{multicols}{2}
-		\textbf{Producer}
-		\begin{verbatim}
-	 1. [produce item]
-	 2. wait( mutex )
-	 3. wait( spaces )
-	 4. [add item to buffer]
-	 5. post( items )
-	 6. post( mutex )
-  \end{verbatim}
-		\columnbreak
-		\textbf{Consumer}
-		\begin{verbatim}
-	 1. wait( mutex )
-	 2. wait( items )
-	 3. [remove item from buffer]
-	 4. post( spaces )
-	 5. post( mutex )
-	 6. [consume item]
-  \end{verbatim}
-	\end{multicols}
-	\vspace{-2em}
-
-	Does this work?
-
-\end{frame}
-
-\begin{frame}
-	\frametitle{The Tiny Details...}
-
-	This solution does have the deadlock problem!
-
-	Imagine at the start of execution, the buffer is empty and the consumer runs first...
-
-	Do you see the problem now?
-
-	This could also happen with the producer.
-
-\end{frame}
-
-\begin{frame}
-	\frametitle{Problems are Only Sometimes a Problem}
-
-	If this solution were implemented, it wouldn't guarantee a deadlock occurs.
-
-	In fact, it probably works fine most of the time.
-
-
-	Once, however, we have found one scenario that can lead to deadlock, there is no need to look for other failure cases.
-
-	We can replace this solution with a better one.
-
-\end{frame}
-
-
-\begin{frame}[fragile]
-	\frametitle{P-C Example}
-
-	\begin{lstlisting}[language=C]
-#include <stdio.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <semaphore.h>
-
-#define BUFFER_SIZE 20
-sem_t spaces;
-sem_t items;
-int counter = 0;
-int* buffer;
-
-int produce() {
-  ++counter;
-  return counter;
-} 
-
-void consume( int value ) {
-  printf("Consumed %d.\n", value);
-}
-\end{lstlisting}
-
-\end{frame}
-
-\begin{frame}[fragile]
-	\frametitle{P-C Example}
-
-	\begin{lstlisting}[language=C]
-void* producer( void* arg ) {
-  int pindex = 0;
-  while( counter < 10000 ) {
-    int v = produce();
-    sem_wait( &spaces );
-    buffer[pindex] = v;
-    pindex = (pindex + 1) % BUFFER_SIZE;
-    sem_post( &items );
-  }
-  pthread_exit( NULL );
-}
-
-void* consumer( void* arg ) {
-  int cindex = 0;
-  int ctotal = 0;
-  while( ctotal < 10000 ) {
-    sem_wait( &items );
-    int temp = buffer[cindex];
-    buffer[cindex] = -1;
-    cindex = (cindex + 1) % BUFFER_SIZE;
-    sem_post( &spaces );
-    consume( temp );
-    ++ctotal;
-  }
-  pthread_exit( NULL );
-}
-\end{lstlisting}
-\end{frame}
-
-\begin{frame}[fragile]
-	\frametitle{P-C Example}
-
-	\begin{lstlisting}[language=C]
-int main( int argc, char** argv ) {
-  buffer = malloc( BUFFER_SIZE * sizeof( int ) );
-  for ( int i = 0; i < BUFFER_SIZE; i++ ) {
-    buffer[i] = -1;
-  }  
-  sem_init( &spaces, 0, BUFFER_SIZE );
-  sem_init( &items, 0, 0 );
-
-  pthread_t prod;
-  pthread_t con;
-
-  pthread_create( &prod, NULL, producer, NULL );
-  pthread_create( &con, NULL, consumer, NULL );
-  pthread_join( prod, NULL );
-  pthread_join( con, NULL );
-
-  free( buffer );
-  sem_destroy( &spaces );
-  sem_destroy( &items );
-  pthread_exit( 0 );
-}
-
-\end{lstlisting}
-\end{frame}
-
-
-\begin{frame}
-	\frametitle{Before We Go On}
-
-	\begin{center}
-		\includegraphics[width=0.5\textwidth]{images/stop-hammertime.jpg}
-	\end{center}
-
-\end{frame}
-
 
 \begin{frame}
 	\frametitle{Mutex Syntax}
 
-	We should take a moment to learn about the syntax of the pthread mutex.
-
-	While it is possible, of course, to use a semaphore as a mutex, frequently we will use the more specialized tool for this task.
+	While it is possible, of course, to use a semaphore as a mutex, a more specialized tool for this task is the pthread mutex.
 
 	In fact, it's generally good practice to use the more specialized tool.
 
@@ -431,7 +106,7 @@ pthread_mutex_unlock( pthread_mutex_t *mutex )
 
 	\texttt{pthread\_mutex\_trylock} is nonblocking.
 
-	Trylock will come up again soon when we look at another classical synchronization problem.
+	Trylock will come up soon when we look at classical synchronization problems.
 
 \end{frame}
 
@@ -450,110 +125,343 @@ pthread_mutex_destroy( pthread_mutex_t *mutex )
 
 \end{frame}
 
+\begin{frame}
+	\frametitle{Condition Variables}
 
-\begin{frame}[fragile]
-	\frametitle{Multiple Producer-Consumer Example}
-	\begin{lstlisting}[language=C]
-#include <stdlib.h>
-#include <pthread.h>
-#include <stdio.h>
-#include <math.h>
-#include <semaphore.h>
+	\begin{center}
+		\includegraphics[width=0.35\textwidth]{images/monday.png}
+	\end{center}
 
-#define BUFFER_SIZE 100
-int buffer[BUFFER_SIZE];
-int pindex = 0;
-int cindex = 0;
-sem_t spaces;
-sem_t items;
-pthread_mutex_t mutex;
+	Condition variables are another way to achieve synchronization.
 
-int produce( int id ) {
-  int r = rand();
-  printf("Producer %d produced %d.\n", id, r);
-  return r;
-}
-
-void consume( int id, int number ) {
-  printf("Consumer %d consumed %d.\n", id, number);
-}
-\end{lstlisting}
 \end{frame}
 
-\begin{frame}[fragile]
-	\frametitle{Multiple Producer-Consumer Example}
-	\begin{lstlisting}[language=C]
-void* producer( void* arg ) {
-  int* id = (int*) arg;
-  for(int i = 0; i < 10000; ++i) {
-    int num = produce(*id); 
-    sem_wait( &spaces );
-    pthread_mutex_lock( &mutex );
-    buffer[pindex] = num;
-    pindex = (pindex + 1) % BUFFER_SIZE;
-    pthread_mutex_unlock( &mutex );
-    sem_post( &items );
-  }
-  free( arg );
-  pthread_exit( NULL );
-}
-\end{lstlisting}
-\end{frame}
+\begin{frame}
+	\frametitle{Condition Variables}
 
-\begin{frame}[fragile]
-	\frametitle{Multiple Producer-Consumer Example}
-	\begin{lstlisting}[language=C]
+	Conceptually, a CV is a queue on which a thread may wait inside a critical section for a condition to become true.
 
-void* consumer( void* arg ) {
-  int* id = (int*) arg;
-  for(int i = 0; i < 10000; ++i) {
-    sem_wait( &items );
-    pthread_mutex_lock( &mutex );
-    int num = buffer[cindex];
-    buffer[cindex] = -1;
-    cindex = (cindex + 1) % BUFFER_SIZE;
-    pthread_mutex_unlock( &mutex );
-    sem_post( &spaces );
-    consume( *id, num );
-  }
-  free( id );
-  pthread_exit( NULL );
-}
-\end{lstlisting}
-\end{frame}
+	While a thread is waiting on a CV, other threads may enter the critical section to modify the shared data.
 
-\begin{frame}[fragile]
-	\frametitle{Multiple Producer-Consumer Example}
-	\begin{lstlisting}[language=C]
-int main( int argc, char** argv ) {
-  sem_init( &spaces, 0, BUFFER_SIZE );
-  sem_init( &items, 0, 0 );  
-  pthread_mutex_init( &mutex, NULL );
+	These other threads can then signal the CV to indicate that the condition has become true after the changes have been made.
 
-  pthread_t threads[20];
-
-  for( int i = 0; i < 10; i++ ) {
-    int* id = malloc(sizeof(int));
-    *id = i;
-    pthread_create(&threads[i], NULL, producer, id);
-  }
-  for( int j = 10; j < 20; j++ ) {
-    int* jd = malloc(sizeof(int));
-    *jd = j-10;
-    pthread_create(&threads[j], NULL, consumer, jd);
-  }
-  for( int k = 0; k < 20; k++ ){  
-    pthread_join(threads[k], NULL);
-  }
-  sem_destroy( &spaces );
-  sem_destroy( &items );
-  pthread_mutex_destroy( &mutex );
-  pthread_exit( 0 );
-}
-\end{lstlisting}
 \end{frame}
 
 
+\begin{frame}
+	\frametitle{Condition Variable}
+
+	Consider a monitor with mutex \texttt{m} and a CV \texttt{c}.
+
+	There are three main operations on \texttt{c}:
+
+	\begin{itemize}
+		\item \texttt{cond\_wait( c, m )}
+		\item \texttt{cond\_signal( c )}
+		\item \texttt{cond\_broadcast( c )}
+	\end{itemize}
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{CV: Wait}
+
+	\texttt{cond\_wait} takes the following steps.
+
+	Step (1): \emph{atomically}:
+	\begin{enumerate}
+		\item unlock the mutex \texttt{m};
+    	\item put the calling thread on \texttt{c}'s wait queue; and
+    	\item block the calling thread (i.e., make it sleep) and yield the processor to another thread.
+	\end{enumerate}
+
+	Step (2): Once a waiting thread is subsequently notified/signaled (see below) and resumed, it will automatically try to re-lock the mutex \texttt{m}.
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{Step (1)}
+
+	The atomicity of operations within Step (1) is crucial.
+
+	One failure mode that could occur if these operations were not atomic is a \alert{missed wakeup}.
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{CV: Signal}
+
+	\texttt{cond\_signal} is called by a thread to indicate that a condition associated with \texttt{c} has become true.
+
+	A thread that calls \texttt{cond\_signal} should do so while it is still inside the critical section, before unlocking the mutex \texttt{m}.
+
+	If there are waiting threads on \texttt{c}'s wait queue, then \texttt{cond\_signal} will move one of them to the ready queue.
+
+	If there are no waiting threads, then the signal is ignored.
+
+	In other words, unlike semaphores, CVs are \emph{memory-less}.
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{CV: Broadcast}
+
+	\begin{center}
+		\includegraphics[width=0.5\textwidth]{images/newsanchor.jpg}
+
+		{HEY GUYS!!! GUESS WHAT!!!}
+	\end{center}
+
+	\texttt{cond\_broadcast} is similar to \texttt{cond\_signal} but wakes up all waiting threads in \texttt{c}'s wait queue if there are any.
+
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{What Should I Do With This?}
+
+	{\small
+	\begin{multicols}{2}
+		\textbf{Waiting Thread}
+		\begin{verbatim}
+	lock( m )
+	/* critical section */
+	while !is_condition_true()
+	    cond_wait( m, c)
+	end while
+	/* rest of critical section */
+	unlock( m )
+		\end{verbatim}
+		\columnbreak
+		\textbf{Signaling Thread}
+		\begin{verbatim}
+	lock( m )
+	/* critical section */
+	if is_condition_true()
+	   cond_signal( c )
+	end if
+	/* rest of critical section */
+	unlock( m )
+
+		\end{verbatim}
+	\end{multicols}}
+
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Why Should We Loop?}
+
+	\begin{center}
+		\includegraphics[width=0.45\textwidth]{images/looper.jpg}
+	\end{center}
+
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Ice Cream}
+
+	Suppose that thread A locks the mutex and enters the critical section.
+
+	It then checks if there is ice cream in the freezer and calls \texttt{cond\_wait} because there is none.
+
+	Inside \texttt{cond\_wait}, the mutex is unlocked before thread A is put to sleep.
+
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Ice Cream}
+
+	Next, thread B arrives, locks the mutex, and enters the critical section.
+
+	Thread B buys ice cream and puts it in the freezer.
+
+	Subsequently, thread B signals the condition variable.
+
+	Since thread A is the only waiting thread, it wakes up and moves to the ready queue.
+
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Ice Cream}
+
+	Thread B continues to run and eventually exits the critical section.
+
+	Before thread B finishes its execution, thread C arrives and is put in the ready queue alongside thread A.
+
+	Thread B finishes its execution, and the OS picks thread C as the next thread to run.
+
+	Thread C locks the mutex, enters the critical section, and eats the ice cream.
+
+	Thread C then finishes up and exits the critical section.
+
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Ice Cream}
+
+	\begin{center}
+		\includegraphics[width=0.3\textwidth]{images/icecream}
+	\end{center}
+
+	When A runs, there is no ice cream in the freezer.
+
+	Therefore, thread A must check the condition and call \texttt{cond\_wait} again.
+
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{That's Not All!}
+
+	Java User Manual:
+
+	\vspace{1em}
+	\begin{displayquote}
+		When waiting upon a Condition, a spurious wakeup is permitted to occur, in general, as a concession to the underlying platform semantics.
+		This has little practical impact on most application programs as a Condition should always be waited upon in a loop, testing the state predicate that is being waited for.
+	\end{displayquote}
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{Can We Apply This To What We Know?}
+
+	The condition variable with broadcast can be used to replace some of the synchronization constructs we've seen already.
+
+	What patterns could be replaced?
+
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Broadcast Barrier}
+
+	Consider the barrier pattern from earlier.
+
+	There are $n$ threads, and we wait for the last one to arrive.
+		{\small
+			\begin{multicols}{2}
+				\textbf{With Semaphores}
+				\begin{verbatim}
+	 1. wait( mutex )
+	 2. count++
+	 3. if count == n
+	 4.    post( barrier )
+	 5. end if
+	 6. post( mutex )
+	 7. wait( barrier )
+	 8. post( barrier )
+	 9. /* critical section */
+	10. wait( mutex )
+	11. counter--
+	12. if counter == 0
+	13.    wait( barrier )
+	14. end if
+	15. post( mutex )
+  				\end{verbatim}
+				\columnbreak
+				\textbf{With Monitor}\vspace{-2em}
+				\begin{verbatim}
+	 1. lock( mutex )
+	 2. count++
+	 3. if count == n
+	 4.    cond_broadcast( barrier )
+	 5. end if
+	 6  while count < n
+	 7.    cond_wait( barrier, mutex )
+	 8. end while
+	 9. unlock( mutex )
+	10. /* critical section */
+	11. lock( mutex )
+	12. counter--
+	13. unlock( mutex )
+
+
+  				\end{verbatim}
+			\end{multicols}
+		}
+
+%	The \texttt{cond\_wait} takes place before \texttt{unlock( mutex )}. That looks strange, doesn't it?
+
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{Spidey Sense Tingling?}
+
+
+	We give up the mutex \texttt{lock} when we wait on the condition variable.
+
+	The fact that we don't get to the unlock statement first does not cause a problem.
+
+	So we are alright.
+
+	The last thread doesn't wait on the condition at all because there's no need to!
+
+	It knows that it is last and there's nothing to wait for so it should proceed.
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+	\frametitle{Condition Variable Syntax}
+
+	\begin{lstlisting}[language=C]
+pthread_cond_init( pthread_cond_t *cv, pthread_condattr_t *attributes );
+pthread_cond_wait( pthread_cond_t *cv, pthread_mutex_t *mutex );
+pthread_cond_signal( pthread_cond_t *cv );
+pthread_cond_broadcast( pthread_cond_t *cv );
+pthread_cond_destroy( pthread_cond_t *cv );
+\end{lstlisting}
+
+	As with other pthread functions we've seen there are create and destroy calls.
+
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Barrier Pattern Code Example}
+	\begin{lstlisting}[language=C]
+typedef struct {
+  int count;
+  int total;
+  pthread_mutex_t mutex;
+  pthread_cond_t cv;
+} barrier_t;
+
+void init_barrier( barrier_t *b, int num ) {
+  b->count = 0;
+  b->total = num;
+  pthread_mutex_init(&b->mutex, NULL);
+  pthread_cond_init(&b->cv, NULL);
+}
+
+void destroy_barrier( barrier_t *b ) {
+  pthread_mutex_destroy(&b->mutex);
+  pthread_cond_destroy(&b->cv);
+}
+	\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Barrier Pattern Code Example}
+	\begin{lstlisting}[language=C]
+void enter_barrier( barrier_t *b ) {
+  pthread_mutex_lock( &b->mutex );
+  b->count = b->count + 1;
+  if ( b->count == b->total ) {
+    pthread_cond_broadcast( &b->cv );
+  }
+  while ( b->count < b->total ) {
+    pthread_cond_wait( &b->cv, &b->mutex );
+  }
+  pthread_mutex_unlock( &b->mutex );
+}
+
+void exit_barrier( barrier_t *b ) {
+  pthread_mutex_lock( &b->mutex );
+  b->count = b->count - 1;
+  pthread_mutex_unlock( &b->mutex );
+}
+	\end{lstlisting}
+
+\end{frame}
 
 \end{document}
-
