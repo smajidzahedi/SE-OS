@@ -383,6 +383,60 @@ pthread_mutex_destroy( pthread_mutex_t *mutex )
 \end{frame}
 
 
+\begin{frame}[fragile]
+	\frametitle{Broadcast Barrier ({\color{red} Fixed})}
+
+	Consider the barrier pattern from earlier.
+
+	There are $n$ threads, and we wait for the last one to arrive.
+		{\small
+			\begin{multicols}{2}
+				\textbf{With Semaphores}
+				\begin{verbatim}
+	 1. wait( mutex )
+	 2. count++
+	 3. if count == n
+	 4.    post( barrier )
+	 5. end if
+	 6. post( mutex )
+	 7. wait( barrier )
+	 8. post( barrier )
+	 9. /* critical section */
+	10. wait( mutex )
+	11. counter--
+	12. if counter == 0
+	13.    wait( barrier )
+	14. end if
+	15. post( mutex )
+  				\end{verbatim}
+				\columnbreak
+				\textbf{With Monitor}\vspace{-1em}
+				\begin{Verbatim}[commandchars=\\\{\}]
+ 1. lock( mutex )
+ 2. count++
+ 3. if count == n
+ 4.    cond_broadcast( barrier )
+ 5. end if
+ 6  while count < n
+ 7.    cond_wait( barrier, mutex )
+ 8. end while
+ 9. unlock( mutex )
+10. /* critical section */
+11. lock( mutex )
+12. done++
+\textcolor{red}{13. if done == n}
+\textcolor{red}{14.    count = 0}
+\textcolor{red}{15.    done = 0}
+\textcolor{red}{16. end if}
+17. unlock( mutex )
+  				\end{Verbatim}
+			\end{multicols}
+		}
+
+%	The \texttt{cond\_wait} takes place before \texttt{unlock( mutex )}. That looks strange, doesn't it?
+
+\end{frame}
+
 \begin{frame}
 	\frametitle{Spidey Sense Tingling?}
 
@@ -420,6 +474,7 @@ pthread_cond_destroy( pthread_cond_t *cv );
 	\begin{lstlisting}[language=C]
 typedef struct {
   int count;
+  int done;
   int total;
   pthread_mutex_t mutex;
   pthread_cond_t cv;
@@ -427,6 +482,7 @@ typedef struct {
 
 void init_barrier( barrier_t *b, int num ) {
   b->count = 0;
+  b->done = 0;
   b->total = num;
   pthread_mutex_init(&b->mutex, NULL);
   pthread_cond_init(&b->cv, NULL);
@@ -457,7 +513,11 @@ void enter_barrier( barrier_t *b ) {
 
 void exit_barrier( barrier_t *b ) {
   pthread_mutex_lock( &b->mutex );
-  b->count = b->count - 1;
+  b->done = b->done + 1;
+  if (b->done = b->total) {
+  	b->done = 0;
+  	b->count = 0;
+  }
   pthread_mutex_unlock( &b->mutex );
 }
 	\end{lstlisting}
