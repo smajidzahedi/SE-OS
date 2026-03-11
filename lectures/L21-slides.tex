@@ -1,6 +1,6 @@
 \input{configuration}
 
-\title{Lecture 21 --- Dynamic Memory Allocation}
+\title{Lecture 21 --- Memory }
 
 \input{author-list}
 
@@ -10,674 +10,494 @@
   \titlepage
 
  \end{frame}
+
+
+\begin{frame}
+\frametitle{Main Memory}
+
+\begin{center}
+	\includegraphics[width=0.55\textwidth]{images/ram.jpg}
+\end{center}
+
+Fetch instructions from memory, fetch operands, write result.
+
+... All to or from memory!
+
+ \end{frame}
+
+
+\begin{frame}
+\frametitle{Main Memory}
+
+\begin{center}
+	\includegraphics[width=0.4\textwidth]{images/waiting-for-the-bus.jpg}
+\end{center}
+
+A single simple instruction like an addition could result in 4 memory accesses. 
+
+Therefore, we are spending a lot of time interacting with memory.
+
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Memory as a Resource}
+
+Application developers behave as if:\\
+\quad (1) main memory is unlimited; and \\
+\quad (2) all of main memory is at the program's disposal. 
+
+
+Why do program developers pretend that memory is infinite and unshared?
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Size Matters Not}
+
+Compared to the early days of computing, memory available is huge. 
+
+\begin{center}
+	\includegraphics[width=0.3\textwidth]{images/yoda.jpg}
+\end{center}
+
+
+The Commodore~64, introduced in 1982, had a whopping 64~KB of memory. 
+
+A 4-byte (32-bit) integer was a significant fraction of memory. 
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Size Matters Not}
+
+Application developers had to scrimp and save to avoid wasting even a single integer's worth of memory. 
+
+This is why languages like C and Java support types like \texttt{short}.
+
+\begin{center}
+	\includegraphics[width=0.35\textwidth]{images/pennypincher.jpg}
+\end{center}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Size Matters Not}
+
+Now: if 1000 integers were wasted unnecessarily, would anyone notice or care?
+
+``Kicking the can down the road''
+
+Even though memory might be big enough for every process to have its own area, that would not work if every developer assumes memory is unshared. 
+
+
+\end{frame}
+
+\begin{frame}
+\frametitle{The OS as Manager}
+
+Modern operating systems manage the shared resource of memory for them. 
+
+This was not always the case; applications used to be responsible for it.
+
+There were third party programs to let the user do some, too. 
+
+
+\end{frame}
+
+\begin{frame}
+\frametitle{No Memory Management}
+
+The simplest way to manage memory is, well, not to manage memory at all.
+
+Early mainframe computers and even personal computers into the 1980s had no memory management strategy. 
+
+Programs would just operate directly on memory addresses. 
+
+\end{frame}
+
+\begin{frame}
+\frametitle{No Memory Management}
+
+The section of memory that is program-accessible depended a lot on the operating system, if any, and other things needed (e.g., the BASIC compiler). 
+
+So to write a program, we need to know the ``start'' \& ``end'' address. 
+
+
+These would differ from machine to machine, making it that much harder to write a program that ran on different computers.
+
+
+
+\end{frame}
+
+\begin{frame}
+\frametitle{No Memory Management - No Rules}
+
+A program executed an instruction directly on a memory address, such as writing 385 into memory location 1024. 
+
+Suppose you wanted to have two programs running at the same time. 
+
+\begin{center}
+	\includegraphics[width=0.3\textwidth]{images/chaos.jpg}
+\end{center}
+
+If the first program writes to address 1024, and the second program writes to address 1024, the second program overwrote the first program's changes. 
+
+\end{frame}
+
+\begin{frame}
+\frametitle{No Memory Management - No Rules}
+
+Alternatively, the first program can use memory locations less than, say, 2048 and the second uses memory locations above 2048. 
+
+This level of co-ordination gets more and more difficult as more and more programs are introduced to the system.
+
+It is next to impossible if we do not control (have the source code to) all the programs that are to execute concurrently.
+
+
+
+\end{frame}
+
+\begin{frame}
+\frametitle{No Memory Management - A Solution}
+
+On every process switch, save the entire contents of memory to disk.\\
+\quad Then restore the memory contents of the next process to run. 
+
+This kind of swapping is, to say the least, incredibly expensive.
+
+But the problem is avoided; only 1 process is ever in memory at a time.
+
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Jumping without a Parachute}
+
+Another problem: there is no protection for the operating system. 
+
+\begin{center}
+	\includegraphics[width=0.6\textwidth]{images/wileecoyote.jpg}
+\end{center}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Jumping without a Parachute}
+
+The operating system is typically placed in either low memory or high memory, or in some cases, a bit of both. 
+
+An errant memory access might overwrite a part of the OS in memory.
+
+This can not only lead to crashes, but also corrupting important files on disk.
+
+
+
+\end{frame}
+
+\begin{frame}
+\frametitle{IBM 360 Solution}
+
+ The IBM 360 solved this problem by dividing memory into 2~KB blocks and each was assigned a 4-bit protection key, held in special registers in the CPU. 
  
- 
-\begin{frame}
-\frametitle{Dynamic Memory Allocation}
- 
- \begin{center}
-	\includegraphics[width=0.7\textwidth]{images/chrome.jpg}
-\end{center}
+The Program Status Word (PSW) also contained a 4 bit key. 
 
-\end{frame}
+The 360 hardware would then identify as an error an attempt to access memory with a protection code different from the PSW key. 
 
-\begin{frame}
-\frametitle{Dynamic Memory Allocation}
+The OS was the only software allowed to change the protection keys. 
 
-To create a new instance of an object in Java, for example, you use the \texttt{new} keyword and the runtime will come and garbage collect it later.
-
-In C++ we have the \texttt{new} and \texttt{delete} operators. 
-
-\end{frame}
-
-\begin{frame}
-\frametitle{General Memory Allocation Interface}
-
-C works on memory at a lower level: \texttt{malloc()} and \texttt{free()}. 
-
-This level is a lot closer to the way the operating system thinks about memory: \\
-\quad Tell me how much you need and tell me when you are finished with it.
-
-
+Thus, no program could interfere with another or with the operating system
 
 
 \end{frame}
 
 \begin{frame}
-\frametitle{Using Memory Allocation in C}
+\frametitle{Base and Limit}
 
-To allocate an integer, you call \texttt{malloc( sizeof( int ) )}. 
+We can generalize this solution by having two values maintained: 
 
-This creates, somewhere in memory, a new integer and returns the address of it that can be stored in a pointer.
+The \alert{base} and \alert{limit} addresses. 
 
-To be sure to ask for the correct amount of memory, we have \texttt{sizeof} which works out the size of its argument (integer).
+These define the start and end addresses of the program's memory.
 
+Every memory access is compared to the base and the [base + limit] address. 
 
-\end{frame}
-
-\begin{frame}
-\frametitle{Using Memory Deallocation in C}
-
-When you \texttt{free()} that pointer, the memory is marked as available.
-
-It is not necessarily cleared or reused right away.
+If an attempted memory access falls outside that acceptable range: error. 
 
 \end{frame}
 
 \begin{frame}
-\frametitle{Using Memory Deallocation in C}
+\frametitle{Base and Limit}
 
-This is why you can sometimes get away with dereferencing a pointer after it has been freed. 
+The base \& limit variables are often registers; comparison is done via hardware.
 
 \begin{center}
-	\includegraphics[width=0.8\textwidth]{images/illegal.jpg}
+\includegraphics[width=0.6\textwidth]{images/memory-baselimit.png}
 \end{center}
 
-Sometimes it takes a while for that memory to be reclaimed or reused so the old value just happens to still be there in memory. 
 
 \end{frame}
 
 \begin{frame}
-\frametitle{Returning Memory when Done}
+\frametitle{Base and Limit}
 
-Note that \texttt{free()} does not specify how much memory is being returned. 
+Imagine we have two programs numbers simply 1 and 2, each 16~KB in size.
 
-This means two things:\\ 
-\quad (1) that the operating system is keeping track of each allocated block's size\\
-\quad (2) that it is not possible to return part of a block.
-
-
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Fulfilling Memory Requests}
-
-The operating system will try to find some free memory to meet the request. 
-
-Running out of memory is a rare thing given the size of main memory in a modern computer.
-
-There is still the possibility that some request may not be fulfilled because no block meeting that need is available.
-
-\end{frame}
-
-
-\begin{frame}
-\frametitle{Arranging Blocks}
-
-Let's consider how to arrange the blocks...
+We will load them into memory in different consecutive areas:
 
 \begin{center}
-	\includegraphics[width=0.4\textwidth]{images/Tetris01.png}
-	\includegraphics[width=0.4\textwidth]{images/Tetris02.png}
-\end{center}
-
-
-\end{frame}
-
-
-\begin{frame}
-\frametitle{Fixed Block Sizes}
-
-One possibility for how to allocate memory is in fixed block sizes. 
-
-All blocks of memory allocated are the same size. 
-
-If a request comes in for 1 byte, 1 block is allocated. 
-
-If a request comes in that is, say, 1.5 blocks, 2 blocks are allocated. 
-
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Fixed Block Sizes: Wasteful?}
-
-It is immediately obvious when we look at this that some memory is ``wasted''. 
-
-If 1.5 blocks are requested and 2 blocks are allocated and returned, we are using up an extra 0.5 blocks. 
-
-This space cannot be used for anything useful (as it shows as allocated).
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Fixed Block Sizes: Wasteful?} 
-
-This is a problem called \alert{internal fragmentation}.
-
-The bigger each block is, the more memory will be wasted.
-
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Fixed: One Size of Blocks}
-
-Suppose the system has only one size of blocks, perhaps, 1~KB. 
-
-\begin{center}
-	\includegraphics[width=0.3\textwidth]{images/lego.jpg}
-\end{center}
-
-Divide up memory into blocks of this fixed size and maintain a linked list of addresses of all currently available blocks. 
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Fixed: One Size of Blocks}
-
-
-When a block is allocated, remove its corresponding node from the linked list. 
-
-When a block is freed, put a node with that address into the linked list. 
-
-If the list is empty, a memory request cannot be satisfied; return null.
-
-This is definitely fast as we can allocate memory in $\Theta(1)$ time.
-
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Fixed: Multiple Sizes}
-
-Recognizing that some memory allocation requests are bigger than others, it might make sense to have several different block sizes.
-
-\begin{center}
-	\includegraphics[width=0.5\textwidth]{images/lego3.jpg}
-\end{center}
-
-Perhaps 1~KB, 2~KB, and 4~KB. 
-
-These can generally be allocated and deallocated in $\Theta(1)$ time if we have one linked list for each different size of block.
-
-
-\end{frame}
-
-
-
-\begin{frame}
-\frametitle{Fixed: Fragmentation}
-
-Unfortunately, fixed block sizes suffer from a lot of internal fragmentation. 
-
-This may be suitable for embedded systems where simplicity and speed of operations are more important than worrying about wasting memory. 
-
-This is, we can see, not how \texttt{malloc()} works.\\
-\quad 1~KB of memory is not allocated to store a 4-byte integer. 
- 
-What we need instead is a variable block size.
-
-
-\end{frame}
-
-
-\begin{frame}
-\frametitle{Variable Block Sizes}
-
-\begin{center}
-	\includegraphics[width=\textwidth]{images/lego2.png}
-\end{center}
-
-
-\end{frame}
-
-
-\begin{frame}
-\frametitle{Variable Block Sizes}
-
-Variable block sizes are not that different from fixed block sizes.
-
-We just take the size of blocks down to the smallest they can be. 
-
-In a system with byte-addressable memory, the smallest block is one byte.
-
-Now a different problem: keeping track of what is allocated \& what is free.
-
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Variable: Bitmaps}
-
-Divide memory into $M$ units of $n$ bits, and then to create a bit array of size $M$ storing the status of each of those units. 
-
-If a bit $m$ in $M$ is 0, it means that unit is unallocated.\\
-If it is 1 then that unit is allocated. 
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Variable: Bitmaps}
-
-
-How much memory is lost to this overhead?\\
-\quad $100/(n+1)$\% of the memory is used. 
-
-If a unit is 4 bytes, the bitmap is about 3\% of memory; \\
-If it is 16 bytes the bitmap takes about 0.8\% of memory. 
-
-Finding a block of $k$ bytes requires searching the bitmap for a run of $\frac{8k}{n}$ zeros~.
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Variable: Linked Lists}
-
-The other approach, as in the case of fixed size blocks, is to use linked lists. 
-
-The info of the linked list can be stored separately from memory allocation.
-
-Or it can be stored as part of the block of memory. Either approach is workable.
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Variable: Linked Lists}
-
-After startup, the linked list contains one entry.\\
-\quad  All available memory is in one contiguous block. 
-
-When a memory request is allocated the block is divided up. 
-
-Suppose we allocate the first 128 bytes.\\
-\quad A new entry is placed in the list, at 128 bytes. 
-
-The node that is added contains the start address, the length of the block, and a bit indicating it is allocated. 
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Variable: Linked Lists}
-
-The unallocated block's node will contain the updated entry: smaller size, new start address, and the bit indicating it is unallocated. 
-
-When a block is deallocated, we simply find that block in the linked list and set the bit to zero to indicate it is now available again.
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Variable: Deallocation}
-
-In a typical system there may be a lot of allocation and deallocation of memory. 
-
-This will probably lead to breaking memory up into smaller pieces.
-
-We may end up with free blocks small and spread out:
-\begin{center}
-\includegraphics[width=0.9\textwidth]{images/checkerboard.png}
-\end{center}
-
-
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Variable: Coalescence}
-
-It may be that there is a contiguous block of free memory available of size $N$. 
-
-A request for $N$ cannot be fulfilled because the memory is logically split up. 
-
-To solve this, we need a way to recombine the split blocks; \alert{coalescence}:
-
-\begin{center}
-\includegraphics[width=0.9\textwidth]{images/checkerboard-coalesced.png}
+\includegraphics[width=0.45\textwidth]{images/os360.png}
 \end{center}
 
 
 \end{frame}
 
 \begin{frame}
-\frametitle{Coalescence}
+\frametitle{Base and Limit Problem}
 
-Coalescence is just the process or merging two adjacent free blocks into one. 
+Program 1 will execute as expected. 
 
-Dividing memory should be a reversible operation. 
+The problem is immediately obvious when Program 2 runs. 
 
-This solves the problem of $N$ contiguous bytes being unable to be allocated. 
+The instruction at address 16384 is executed: \texttt{JMP 28} takes execution to memory address 28 and not the expected address of 16412. 
 
-Coalescence can be done periodically or whenever a block of memory is freed.
+The problem is that both programs reference absolute physical locations. 
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Static Relocation}
+
+The IBM 360's stopgap solution to this was to do static relocation.
+
+If a program was being loaded to a base address 16384 the constant 16384 was added to every program address during the load process. 
+
+While slow, if every address is updated correctly, the program works.
+
 
 
 \end{frame}
 
 \begin{frame}
-\frametitle{Variable: Linked List \& Coalescence}
+\frametitle{Static Relocation is Hard}
 
-Coalescence makes it a good idea to maintain the memory blocks in a doubly-linked list.
+A command like \texttt{JMP 28} must be relocated, but the 28 in a command like \texttt{ADD~R1,28} is a constant and should not be changed. 
 
-When a block is freed, it may be in the middle of two free blocks. 
+How do we know which is an address and which is a constant? 
 
-It is convenient to have previous and next pointers so the adjacent sections can be merged efficiently.
+It gets worse: in C a pointer contains an address, but addresses are just numbers. 
 
+So in theory we could just dereference any integer variable and it would take us to a memory address (whether it's valid or not is not the point here). 
 
-\end{frame}
-
-\begin{frame}
-\frametitle{Variable: External Fragmentation}
-
-Even with coalescence, we may have the problem that $N$ free bytes exist in the system but spread out over many little pieces.
-
-When free memory is spread into little tiny fragments, this situation is called \alert{external fragmentation}. 
-
-It is analogous to internal fragmentation, except of course the tiny fragments are not inside any block.
+That makes it even harder to know if a number is just a number or an address.
 
 
 \end{frame}
 
 \begin{frame}
-\frametitle{External Fragmentation}
+\frametitle{Variable Names}
 
-One way to reduce external fragmentation is to increase internal fragmentation. 
+When we are writing a program, unless it's in assembly, we do not usually refer to variables by their memory locations.
 
-If a request for $N$ bytes comes in and there is a block of $N+k$ available, where $k$ is very small, allocate the whole $N+k$ block for the request.
+The command we write looks something like \texttt{x = 5;} 
 
-We just accept that $k$ bytes are lost to internal fragmentation.
-
-\end{frame}
-
-\begin{frame}
-\frametitle{External Fragmentation Example}
-
-If a free block contains 128 bytes and the request is for 120 bytes, it may not be worth the hassle and overhead to split this block into 120 and 8. 
-
-Some systems round up memory allocations to the nearest power of 2 (e.g., a request for 28 bytes gets moved up to 32). 
-
-Of course, this does not really help with satisfying the request for $N$ bytes of memory; it just keeps external fragmentation down.
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Memory Compaction}
-
-Another idea is \alert{compaction}, which can also be thought of as \alert{relocation}. 
-
-\begin{center}
-	\includegraphics[width=0.5\textwidth]{images/compactor.jpg}
-\end{center}
-
-The goal is simply to move the allocated sections of memory next to one another in main memory, allowing for a large contiguous block of free space. 
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Memory Compaction}
-
-This is a very expensive operation. 
-
-The Java runtime, for example, must ``stop the world'' (halt all program execution) while it reorganizes memory. 
-
-Even if we are willing to pay the cost, it might not be possible to do.
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Memory Compaction}
-
-Languages with garbage collection like Java or C\# may do memory compaction as needed when the garbage collector runs.
-
-This can work in such languages, because variables are references.
-
-References can be moved around in memory at the garbage collector or runtime's convenience; all it needs to do is update every reference.
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Memory Compaction}
-
-
-In C we operate directly on memory addresses. 
-
-Thanks to things like pointer arithmetic and using integer variables as addresses, there is no reliable way to update all references.
+We know that variable \texttt{x} is stored in memory, the question arises: when is the variable assigned a location in memory?
 
 
 \end{frame}
 
 \begin{frame}
-\frametitle{Variable: Allocation Strategies}
+\frametitle{Assigning a Variable a Location}
 
-Given a memory request of $N$, where do we allocate the memory? 
-
-\begin{center}
-	\includegraphics[width=0.7\textwidth]{images/zoning.jpg}
-\end{center}
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Variable: Allocation Strategies}
-
-If there is no block of at least size $N$, the request cannot be satisfied. 
-
-If there is only one, the decision is easy.
-
-As long as memory has two free blocks of sufficient size ($N$ or more) that cannot be coalesced, a memory allocation request will require making a decision.
-
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Variable: Allocation Strategies}
-
-We will examine the following strategies:
-
-\begin{center}
-	\includegraphics[width=0.4\textwidth]{images/seuss.jpg}
-\end{center}
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Variable: Allocation Strategies}
-
-We will examine the following strategies:
+There are three opportunities to assign a variable a place in memory:
 
 \begin{enumerate}
-	\item First fit.
-	\item Next fit.
-	\item Best fit.
-	\item Worst fit.
-	\item Quick fit.
+	\item \textbf{Compile time}
+	\item \textbf{Load time}
+	\item \textbf{Execution time}
 \end{enumerate}
 
-Let's use two linked lists: one for allocated memory and one for unallocated memory. 
 
 \end{frame}
 
 \begin{frame}
-\frametitle{First Fit}
+\frametitle{Address Space}
 
-Start looking at the beginning of memory, and check each block. 
+It is clear that having no memory management leaves us with a number of problems. 
 
-If the block is of sufficient size, split it to allocate the memory, and return the balance to the unallocated memory list. 
+We need an abstraction; a layer of indirection. 
 
-This algorithm has a runtime of $O(n)$ where $n$ is the number of blocks. 
-
-This algorithm is simple to implement. 
-
+We do this with a concept called \alert{address space}. 
 
 
 \end{frame}
 
 \begin{frame}
-\frametitle{Next Fit}
+\frametitle{Address Space}
 
-Modification of first fit.
+An address space is a set of addresses that a process can use.
 
-Keep track of where the last block was allocated, and then start the next search after that. 
-
-This prevents the situation where there are a lot of small unallocated blocks (external fragmentation) all concentrated at the start of memory. 
-
-The runtime is still $O(n)$, as with first fit.
+Each process has its own address space, independent of other processes'.\\
+\quad Except when we create shared memory.
 
 \end{frame}
 
 
 
 \begin{frame}
-\frametitle{Best Fit}
+\frametitle{Address Space: Telephone Numbers}
+Telephone numbers in Canada and the USA take the form of NNN-NNNN.
 
-We could instead try to make a more intelligent decision. 
+In theory, any number in the range 000-0000 to 999-9999 could be issued, but in practice certain numbers are reserved (like the 000 or 555 prefixes).
 
-Considering all blocks, we choose the smallest block that is at least as big as $N$.
-
-This produces the smallest remaining unallocated space at the end. 
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Best Fit}
-
-This would require either:\\
-\quad (1) checking every available block ($\Theta(n)$ runtime); or\\
-\quad (2) keeping the blocks sorted by increasing size ($O(n)$ runtime). 
-
-If we use an AVL tree or red-black tree, then we can get best fit to run in $\Theta($ln$(n))$, possibly better runtime than first fit.
+Given the number of phones in the countries, 7 digits can't possibly be enough.
 
 \end{frame}
 
 \begin{frame}
-\frametitle{Worst Fit}
-
-The problem with best fit is that the leftover bits of memory are likely to be too small to be useful. 
-
-Rather than trying to find the smallest block that is of size $N$ or greater, choose the largest block of free memory. 
-
-When the block is split, the remaining free block is, hopefully, large enough to be useful. 
-
-
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Worst Fit}
-
-As with best fit, we must either:\\
-\quad (1) check each available block; or \\
-\quad (2) keep the block sorted by size, though decreasing size this time. 
-
-A max heap is appropriate, or a binomial or Fibonacci heap could also be appropriate.
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Quick Fit}
-
-Though not a solution on its own, quick fit is an optimization. 
-
-Use if memory requests of a certain size are known to be common. 
-
-Common: requests for 1~MB.
-
-Keep a separate list of blocks that are of perhaps 1-1.1~MB in size, so that if the request for 1~MB does come in, it can be satisfied immediately and quickly. 
-
-\end{frame}
-
-\begin{frame}
-\frametitle{16 MB Allocation Example}
+\frametitle{Address Space: Telephone Numbers}
 
 \begin{center}
-\includegraphics[width=0.60\textwidth]{images/first-best-next.png}
+	\includegraphics[width=0.6\textwidth]{images/areacodes.png}
+\end{center}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Area Codes for Memory}
+
+This is the idea we want to apply: let each process have its own area code. 
+
+So process 1 can write to location 1024 and process 2 can write to location 1024 and these are two distinct locations, perhaps 21024 and 91024 respectively.
+
+Now, instead of altering the addresses in memory, we will effectively prefix every memory access with an area code.
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Area Codes for Memory}
+
+The address that is generated by the CPU, e.g., the 28 in \texttt{JMP 28}, is the \alert{logical address}. 
+
+We then add the area code to it to produce the \alert{physical address} (the actual location in memory and the address that it sent over the bus). 
+
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Relocation Register}
+
+In practice, to speed this up, it is done via some hardware, and the ``area code'' is a register called the \alert{relocation register}:
+
+\begin{center}
+\includegraphics[width=0.6\textwidth]{images/relocation-register.png}
+\end{center}
+
+
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Relocation Register}
+
+The process itself does not know the physical address (14346 in the example).
+
+It knows only the logical address (346). 
+
+This is a run-time mapping of variables to memory.  
+
+We get some protection between processes.
+
+We would get more protection if we brought back the limit register and compared the physical address to the base and [base + limit] values again. 
+
+
+\end{frame}
+
+\begin{frame}
+\frametitle{The Other Kind of Relocation}
+
+This scheme also gives us something new: we can relocate a process in memory if we change the relocation register's value accordingly. 
+
+A process that is currently loaded into memory with a relocation register value of 14000 can easily be moved to another location. 
+
+Copy all the memory from relocation register to the limit to a new location and then update the relocation register to the new starting location (90000). 
+
+After that, the old location of the process's memory can be marked as available or used by another process.
+
+\end{frame}
+
+\begin{frame}
+\frametitle{The Price We Pay}
+
+Every memory access now includes an addition (or 2 if the limit register is used). 
+
+Comparisons are pretty quick for the CPU, but addition can be quite a bit slower, because of carry propagation time.
+
+So every memory access has a penalty associated with it: \\
+\quad The addition of the relocation register value to the issued CPU address.
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Swapping}
+
+
+To run, a process must be in main memory. 
+
+Given enough processes, sufficiently demanding processes, it will not be possible to keep all of them in memory at the same time. 
+
+Processes that are blocked may be taking up space in memory. It might be logical to make room for processes that are ready to run.
+
+Moving a process from memory to disk (or vice-versa) is called \alert{swapping}.
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Swapping}
+\begin{center}
+\includegraphics[width=0.6\textwidth]{images/swapping1.png}
 \end{center}
 
 
 \end{frame}
 
 \begin{frame}
-\frametitle{Choosing a Strategy}
+\frametitle{Swapping is Painful}
 
-Simulations show that worst fit performs, well, worst in terms of time required to fulfill an allocation request and that it results in the most wasted space. 
+Unfortunately, swapping a process to disk is very painful. 
 
-First (next) and best fit are about equal in how well they utilize memory, but first fit tends to be faster. 
+If the process is using 1~GB of memory, to swap a process out to disk, we need to write 1~GB of memory to disk. 
 
-Despite this, even with optimization, given $x$ allocated blocks, another 0.5$x$ blocks may be lost to fragmentation.
-
-\end{frame}
-
-
-
-\begin{frame}
-\frametitle{Choosing a Strategy}
-
-The next fit algorithm tends to do allocations at the end of memory, so the largest block of free memory (typically at the end) is quickly broken up. 
-
-First fit tends to litter the beginning of memory with small fragments.
-
-Best fit tends to produce free blocks that are too small to be useful. 
-
-
-\end{frame}
-
-
-
-\begin{frame}
-\frametitle{Binary Buddy}
-How about a compromise between fixed and variable allocation?
-
-There is some internal fragmentation, but it is a trade-off against how much external fragmentation we are willing to accept.
-
-System: \alert{binary buddy}.
-
-
-\end{frame}
-
-
-
-\begin{frame}
-\frametitle{Binary Buddy}
-
-In a buddy system, memory blocks are available in powers of 2. 
-
-More formally, a block is of size $2^{K}$, where $L \leq K \leq U$.
-
-$2^{L}$ is the smallest block size that can be allocated.
-
-$2^{U}$ is the largest block size that can be allocated (full size of memory). 
-
-\end{frame}
-
-
-
-\begin{frame}
-\frametitle{Binary Buddy}
-
-Initially, memory is treated as a single block of size $2^{U}$. 
-
-If a request of size $n$ occurs, $2^{U-1} < n \leq 2^{U}$, then the entire block is allocated. 
-
-Otherwise, the block is split into two ``buddies'', of size $2^{U-1}$. 
-
-If $2^{U-2} < n \leq 2^{U-1}$, allocate one of the blocks of $2^{U-1}$ to the request.
-
-Otherwise, subdivide again. 
+To load that process back later, it means reading another 1~GB from disk and putting it into main memory.
  
-Repeat until the smallest block greater than or equal to $n$ is allocated. 
+So, swapping is something we would like to do as little as possible.
 
 \end{frame}
 
 \begin{frame}
-\frametitle{Binary Buddy}
+\frametitle{Swapping and Relocation}
 
-In subsequent allocations, we look through the data structure to find either:\\
-\quad (1) a block of appropriate size; or\\
-\quad (2) a block that can be subdivided to meet the allocation. 
+When swapping a process back in from disk it is not necessary to put it back in exactly the same place as it originally was.
 
-Whenever a pair of buddies (two blocks of equal size, split from the same ``parent'') in the list are both free, they can be coalesced.
-
-\end{frame}
-
-
-\begin{frame}
-\frametitle{Binary Buddy 1~MB Block}
+Just update the relocation register.
 
 \begin{center}
-\includegraphics[width=\textwidth]{images/binary-buddy.png}
+\includegraphics[width=0.7\textwidth]{images/swapping2.png}
 \end{center}
-
 
 \end{frame}
 
+\begin{frame}
+\frametitle{Memory Allocation}
+
+Thus far we have considered process memory as a large, fixed-sized block.
+
+ A process gets a big section of memory and operates in that area.
+ 
+As you know from previous programming experience, use of the \texttt{new} keyword in some languages, or \texttt{malloc()} in C, will result in dynamic memory allocation. 
+
+We will have to deal with this next...
+
+\end{frame}
 \end{document}
 
