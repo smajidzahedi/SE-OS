@@ -2,99 +2,214 @@
 
 \begin{document}
 
-\lecture{ 20 --- Memory }{\term}{Prepared by Jeff Zarnett, taught by Seyed Majid Zahedi}
+\lecture{ 20 --- Deadlock Detection \& Recovery }{\term}{Prepared by Jeff Zarnett, taught by Seyed Majid Zahedi}
 
-\section*{Main Memory}
+\section*{Deadlock Detection}
+Thus far we have examined several ways to prevent or avoid deadlock, but all of those solutions have come with significant drawbacks or limitations. Avoidance analyses are also conservative; they will prevent a request from taking place if there is even a small chance it could lead to a deadlock. If we cannot stop deadlock from happening or cannot live with the performance reduction that avoidance mandates, then perhaps the next best thing is to let all resource requests proceed and then determine later if a deadlock exists, and if so, do something about it.
 
-In executing a program, the CPU fetches instructions from memory, and decodes the instruction. It may be that the instruction requires fetching of operands from memory. After the operation is completed, a result may be stored back in memory. So a single simple instruction like an addition could easily result in four memory accesses. Executing a program therefore means spending a lot of time interacting with memory.
+The truth is that the operating system is in the best position to detect if there is a deadlock, but commercial operating systems don't do that. We can do it ourselves in our program using some of the following techniques but we almost certainly won't have the full picture. This is because we cannot see what's going on inside other processes or inside the kernel. But we will do our best under the circumstances, if we need to.
 
-Like the CPU, main memory is a resource that needs to be shared between multiple processes. The way programs are written, application developers behave as if (1) main memory is unlimited, and (2) all of main memory is at the program's disposal. Simple logic tells us that application developers are wrong: an infinite amount of data storage would require an infinite amount of physical space. Memory space is limited to the physical amount of RAM in the machine, which is a function of how much money you spent when purchasing it. Even so, why is it that program developers pretend that memory is infinite and unshared when it is not? 
+Most programs realistically do not and cannot do this; however, database servers are a (frequently used, in this course anyway) potential example of a program that does check whether there is a deadlock and takes action to resolve it.
 
-Certainly compared to the early days of computing, the amount of memory available is huge. The Commodore~64, introduced in 1982, had a whopping 64~KB of memory\footnote{ And now you know why it was called the Commodore~\textbf{64}.}. A 4-byte (32-bit) integer was a significant fraction of memory, and application developers had to scrimp and save to avoid wasting even a single integer's worth of memory. This historical reason is why languages like C and Java support types like \texttt{short} even though you have probably never used them outside of a programming exercise or examination.  In the meantime, memory has jumped up to 8 or 16~GB. Remember that 1~GB is 1024~MB and 1~MB is 1024~KB. Now think about the fact that we still use 32-bit integers. If a thousand integers were wasted unnecessarily, would anyone notice or care? This makes the problem better by ``kicking the can down the road'' -- we can use a lot more memory before we are in danger of running out, but it's still possible to run out. Furthermore, even though memory might be big enough for every process to have its own area, that would not work if every developer assumes memory is unshared. So we still have not solved the mystery of why application developers can be oblivious to the realities of main memory.
-
-The answer is that most modern operating systems manage the shared resource of memory for them. This was not always the case, and applications used to be responsible for managing all of memory. It was also not so long ago that there were various third party programs to let the user do some memory management, too. Around the time of the last versions of MS-DOS and Windows 95, there were products like QEMM 8 that you could use to move programs around in memory. But you're not here to hear old war stories about moving parts of Windows into high memory so that TIE Fighter would run.  One of the major objectives of the operating system is to manage shared resources, and that is exactly what main memory is. 
-
-\subsection*{No Memory Management}
-The simplest way to manage memory is, well, not to manage memory at all. Early mainframe computers and even personal computers into the 1980s had no memory management strategy. Programs would just operate directly on memory addresses. Memory is viewed as a linear array with addresses starting at 0 and going up to some maximum limit (e.g., 65535) depending on the physical hardware of the machine. The section of memory that is program-accessible depended a lot on the operating system, if any, and other things needed (e.g., the BASIC compiler). So to write a program, we need to know the ``start'' address (the first free location after the OS, drivers, compiler and all that) and the ``end'' address, the last available address of memory. These would differ from machine to machine, making it that much harder to write a program that ran on different computers.
-
-A program executed an instruction directly on a memory address, such as writing 385 into memory location 1024. Suppose you wanted to have two programs running at the same time. Immediately, a problem springs to mind: if the first program writes to address 1024, and the second program writes to address 1024, the second program overwrote the first program's changes and it will probably result in errors or a crash. Alternatively, if programs are aware of one another, the first program can use memory locations less than, say, 2048 and the second uses memory locations above 2048. This level of co-ordination gets more and more difficult as more and more programs are introduced to the system and is next to impossible if we do not control (have the source code to) all the programs that are to execute concurrently.
-
-In theory, there is a solution: on every process switch, save the entire contents of memory to disk, and restore the memory contents of the next process to run. This kind of swapping is, to say the least, incredibly expensive -- imagine swapping out several gigabytes of memory on every process switch -- but the problem is avoided because only one process is ever in memory at a time.
-
-Aside from the inefficiency, there is another problem: there is no protection for the operating system, either. The operating system is typically placed in either low memory (the start of addresses) or high memory (from the end of addresses), or in some cases, a bit of both. An errant memory access might result in overwriting a part of the OS in memory, which can not only lead to crashes, but could also result in corrupting important files on disk.
-
-We can attempt to solve the problem of protection by keeping track of some additional information. The IBM 360 solved this problem by dividing memory into 2~KB blocks and each was assigned a 4-bit protection key, held in special registers in the CPU. The Program Status Word (PSW) also contained a 4 bit key. The 360 hardware would then identify as an error an attempt to access memory with a protection code different from the PSW key. And the operating system itself was the only software allowed to change the protection keys. Thus, no program could interfere with another or with the operating system~\cite{mos}.
-
-We can generalize this solution by having two values maintained: the \textit{base} and \textit{limit} addresses. These define the start and end addresses of the program's memory. Every memory access is then compared to the base address as well as the [base + limit] address. If an attempted memory access falls outside that acceptable range, this is an error. As this operation is likely to be executed approximately infinity times, to make the operation as fast as possible, the base and limit variables are usually registers and this comparison is done using hardware. The flow chart below describes the operation (keeping in mind that both comparisons can be done in parallel).
+The basic strategy for deadlock detection is like the deadlock avoidance strategy in that it relies on a model of the resource allocation and requests. If resources have only a single instance, we may reduce the graph to a simplified version called the \textit{wait-for} graph. This removes the resource boxes from the diagram and indicates that a process $P_{i}$ is waiting for process $P_{j}$ rather than for a resource $R_{k}$ that happens to be held by $P_{j}$. An edge $P_{i} \rightarrow P_{j}$ exists in the wait-for graph if and only if the resource allocation graph has a request $P_{i} \rightarrow R_{k}$ and an assignment edge $R_{k} \rightarrow P_{j}$~\cite{osc}. Consider the example below:
 
 \begin{center}
-\includegraphics[width=0.7\textwidth]{images/memory-baselimit.png}\\
-Hardware address protection with base and limit registers~\cite{osc}.
+	\includegraphics[width=0.5\textwidth]{images/rag-waitfor.png}\\
+	(a) A resource allocation graph and (b) its corresponding wait-for graph~\cite{osc}.
 \end{center}
 
+Given the wait-for graph, it is trivial for humans to look at this and determine if there is a cycle, but for the computer it takes slightly more work. We must execute an algorithm to determine if there is a cycle. A cycle exists in the wait for graph if and only if a deadlock exists in the system. Such cycle detection algorithms tend to have runtime characteristics of $\Theta(n^{2})$ where $n$ is the number of nodes in the graph. Though not a formal proof and probably not acceptable to write on a data structures and algorithms examination, the premise of the algorithm is: for each node $n$ in the graph, examine each possible path from that node. If a node is reached from which no further path is available, examine the next path. If node $n$ is reached on the current path, a cycle is detected and the algorithm terminates.
 
-This, unfortunately, does not solve the problem. Imagine we have two programs numbered simply 1 and 2, each 16~KB in size. Suppose then we will load them into memory in different consecutive areas, as in the figure below:
+\subsection*{General Deadlock Detection Algorithm}
 
+We will use the general deadlock detection algorithm from~\cite{mos} that allows for multiple resources of each type. In this algorithm, there are $n$ processes numbered $P_{1}$ through $P_{n}$ and $m$ resources. Resources are represented by two vectors: $E$, the existing resource vector -- the total number of instances of each resource; and $A$, the available resource vector -- how many instances of each resource are currently available (not assigned to a process). If resource $i$ has two instances total and one is currently assigned to a process, $E_{i}$ is 2 and $A_{i}$ is 1.
+
+We need two matrices to represent the current situation of the system. The first is $C$, the current allocation; it contains data about what resources are currently assigned to each process. Thus, row $i$ of $C$ shows how many of each resource $P_{i}$ has. The second matrix is $R$, the request matrix. Row $i$ of this matrix shows how many of each resource $P_{i}$ wants. Thus, $C_{ij}$ shows the number of instances of resource $j$ that $P_{i}$ has and $R_{ij}$ shows the number of instances of resource $j$ that $P_{i}$ wants. Or, to show what those look like:
+
+\begin{multicols}{2}
+	\begin{center}
+		\textsf{Resources in Existence}\\
+		$[E_{1}, E_{2}, ..., E_{m}]$
+
+		\textsf{Current Allocations}
+		\[
+			\left[ {\begin{array}{cccc}
+							C_{11} & C_{12} & ... & C_{1m} \\
+							C_{21} & C_{22} & ... & C_{2m} \\
+							\vdots & \vdots &     & \vdots \\
+							C_{n1} & C_{n2} & ... & C_{nm}
+						\end{array} } \right]
+		\]
+	\end{center}
+	\columnbreak
+
+	\begin{center}
+		\textsf{Resources Available}\\
+		$[A_{1}, A_{2}, ..., A_{m}]$
+
+		\textsf{Requests}
+		\[
+			\left[ {\begin{array}{cccc}
+							R_{11} & R_{12} & ... & R_{1m} \\
+							R_{21} & R_{22} & ... & R_{2m} \\
+							\vdots & \vdots &     & \vdots \\
+							R_{n1} & R_{n2} & ... & R_{nm}
+						\end{array} } \right]
+		\]
+	\end{center}
+
+\end{multicols}
+
+Note that at all times a resource is considered either allocated or available. This means this mathematical relationship always holds:
+\vspace{-2em}
 \begin{center}
-\includegraphics[width=0.70\textwidth]{images/os360.png}\\
-(a) Program 1. (b) Program 2. (c) Programs 1 and 2 loaded into memory consecutively.~\cite{mos}.
+	$\sum\limits_{i=1}^n C_{ij} + A_{j} = E_{j}$.
 \end{center}
 
-Program 1 will execute as expected. The problem is immediately obvious when Program 2 runs. The instruction at address 16384 is executed: \texttt{JMP 28} takes execution to memory address 28 (an \texttt{ADD} instruction and not the expected address of 16412 and the \texttt{CMP} comparison). The problem is that both programs reference absolute physical locations. 
+There is one more bit of setup before we are ready to run the algorithm. The key idea is comparison of vectors, so let us define for notational convenience, the idea of ``less than'' for two vectors. We will say that for two vectors $A$ and $B$ of length $m$,  $A \leq B$ means that $A_{i} \leq B_{i}$ for all $i$ from 1 to $m$.
 
-The IBM 360's stopgap solution to this was to do static relocation: if a program was being loaded to a base address 16384 the constant 16384 was added to every program address during the load process. While slow, if every address is updated correctly, the program works~\cite{mos}.
-
-This is, unfortunately, not as easy as it sounds. A command like \texttt{JMP 28} must be relocated, but the 28 in a command like \texttt{ADD R1,28} (add 28 to register R1 and store the result in R1) is a constant and should not be changed. How do we know which is an address and which is a constant? It gets worse: in C a pointer contains an address, but addresses are just numbers, so in theory we could just dereference any integer variable and it would take us to a memory address (whether it's valid or not is not the point here). That makes it even harder to know if a number is just a number or an address.
-
-When we are writing a program, unless it's in assembly, we do not usually refer to variables by their memory locations. The command we write looks something like \texttt{x = 5;} and although we know that variable \texttt{x} is stored in memory, the question arises: when is the variable assigned a location in memory? There are three obvious times to do it~\cite{osc}:
+At last, the algorithm. The starting condition is that all processes are unmarked and the vectors and matrices described above are populated. The algorithm will go through all processes and determine if they can complete, under worst-case conditions (keeping all resources until termination), and if they can, marks them. At the end, any processes that are not marked are deadlocked.
 
 \begin{enumerate}
-	\item \textbf{Compile time}: the solution we saw first with commands like \texttt{JMP 28}. If we are certain where the process will be loaded into memory, at compile time we can convert those variables to address locations. This is what happens in assembly, and in the MS-DOS .COM format (like \texttt{command.com}).
-	\item \textbf{Load time}: the IBM 360 solution; at the time when the code is to be loaded into memory, the addresses are updated. This requires that the compiler indicate what numbers are addresses and should be updated when the program is loaded into memory.
-	\item \textbf{Execution time}: if programs can move around in memory during execution (something we have not yet examined), then we need to do the binding at run-time. For this to work, though, we will need help from the hardware developers...
+	\item Search for an unmarked process whose requests can all be satisfied with the available resources in $A$. Mathematically: find a process $P_{i}$ such that row $R_{i} \leq A$.
+	\item If a process is found, add the allocated resources of that process to the available vector and mark the process. Mathematically: $A = A + C_{i}$. Go back to step 1.
+	\item If no process was found in the search of step 1, the algorithm terminates.
 \end{enumerate}
 
-\subsection*{Address Space}
-It is clear that having no memory management system leaves us with a number of problems in memory. What we would like to do is introduce an abstraction; a layer of indirection. We do this with a concept called \textit{address space}. An address space is a set of addresses that a process can use; each process has its own address space, independent of other processes' address spaces (except when we create shared memory).
+This approach is similar to the banker's algorithm. Step one looks for a process that can run to completion, and we are certain it will be able to do so because the currently available resources equal or exceed its needs. That process can finish, and when it does so, its currently-held resources are released and available for another process to acquire. Step two reflects this by adding the resources it holds to the available set. Then another process is selected. At the end, either all processes can finish and there is no deadlock, or there is a set of processes (at least two) that are deadlocked.
 
-Telephone numbers in Canada and the USA take the form of NNN-NNNN, a seven digit number. In theory, any number in the range 000-0000 to 999-9999 could be issued, but in practice certain numbers are reserved (like the 000 or 555 prefixes). Given the number of telephones in the countries, seven digits could not possibly be enough (10 million numbers for a population around 350 million?!). In fact, many readers probably looked at this and thought it was wrong that phone numbers are seven digits; phone numbers are ten digits! Those three additional digits are the area code, after all, and they relate to a geographic area. The number 416-555-1234 is identifiable by its area code as being located in Toronto (or at least a cell phone registered there), and the number 212-555-1234 is in New York City. Although ten digit dialing is mandatory in Toronto (and presumably NYC), if you live in a district where ten digit dialing is not mandatory, you can dial 555-1234 and it will connect you to the number 555-1234 in your local area code. This is the idea we want to apply to memory: let each process have its own area code. So process 1 can write to location 1024 and process 2 can write to location 1024 and these are two distinct locations, perhaps 21024 and 91024 respectively.
+This algorithm has a runtime performance characteristic of $\Theta(m \times n^{2})$.
 
-Now, instead of altering the addresses in memory, we will effectively prefix every memory access with an area code. The address that is generated by the CPU, e.g., the 28 in \texttt{JMP 28}, is the \textit{logical address}. We then add the area code to it to produce the \textit{physical address} (the actual location in memory and the address that it sent over the bus). In practice, to speed this up, it is done via some hardware, and the ``area code'' is a register called the \textit{relocation register} as below:
+\paragraph{Deadlock Detection Algorithm Example.}
 
-\begin{center}
-\includegraphics[width=0.5\textwidth]{images/relocation-register.png}\\
-Dynamic translation of logical addresses to physical addresses with a relocation register~\cite{osc}.
-\end{center}
+Let's now use this algorithm on an example also from~\cite{mos}. Let us assume we have 4 types of resources and 3 processes. The names and types of the resources do not matter - they can be anything - all that matters are the numbers. Each process has some resources currently allocated to it, and each process has some requests outstanding. Thus, the initial state of the system is:
 
-The process itself does not know the physical address (14346 in the above example); it knows only the logical address (346). This is a run-time mapping of variables to memory.  We get some protection between processes, though we would get more protection if we brought back the limit register and compared the physical address to the base and [base + limit] values again. 
+\begin{multicols}{2}
+	\begin{center}
+		$E = [4, 2, 3, 1]$
+		\[ C =
+			\left[ {\begin{array}{cccc}
+							0 & 0 & 1 & 0 \\
+							2 & 0 & 0 & 1 \\
+							0 & 1 & 2 & 0 \\
+						\end{array} } \right]
+		\]
+	\end{center}
+	\columnbreak
 
-This scheme also gives us something new: we can relocate a process in memory if we change the relocation register's value accordingly. A process that is currently loaded into memory with a relocation register value of 14000 can easily be moved to another location. Copy all the memory from relocation register to the limit to a new location, such as 90000, and then update the relocation register to the new starting location (90000). After that, the old location of the process's memory can be marked as available or used by another process.
+	\begin{center}
+		$A = [2, 1, 0, 0]$
+		\[ R =
+			\left[ {\begin{array}{cccc}
+							2 & 0 & 0 & 1 \\
+							1 & 0 & 1 & 0 \\
+							2 & 1 & 0 & 0
+						\end{array} } \right]
+		\]
+	\end{center}
 
-These benefits do not come for free. Every memory access now includes an addition (or two if the limit register comes into play). Comparisons are pretty quick for the CPU, but addition can be quite a bit slower, because of carry propagation time\footnote{If you are the sort of person who is really only interested in software and you have been wondering why the program has made you learn all sorts of details about hardware, this is a good example of why. You will have noticed in this section that the hardware developers have bailed the software developers out of various problems by taking operations that would be painfully slow and doing them a lot faster. In the case of the CPU addition carry propagation problem, if you don't understand the hardware, the software you write will be slow or problematic and you will not know why.}. So every memory access has a penalty associated with it to do the addition of the relocation register value to the issued CPU address. 
+\end{multicols}
 
-\subsection*{Swapping}
+Now, carry out the algorithm. The first process cannot proceed because its request $R_{14}$ cannot be met; there are no instances of resource 4 available. Process 2 cannot proceed either, because it needs resource 3 and there are none of those available either. Process 3 can run and will eventually return its resources, changing the available vector to $A = [2, 2, 2, 0]$. Mark process 3.
 
-To run, a process must be in main memory. Given enough processes, or processes sufficiently demanding on the memory of the system, it will not be possible to keep all of them in memory at the same time. Processes that are blocked may be taking up space in memory and it might be logical to make room for processes that are ready to run by moving blocked processes out of memory. The process of moving a process from memory to disk or vice-versa is called \textit{swapping}.
+Process 1 still cannot run because its need for resource 4 still cannot be met. Process 2, however, can, and it will do so, returning all its resources. The available vector is changed to $A = [4, 2, 2, 1]$. Mark process 2.
 
-\begin{center}
-\includegraphics[width=0.5\textwidth]{images/swapping1.png}\\
-Swapping processes (1) from memory to disk and (2) from disk to memory~\cite{osc}.
-\end{center}
+Process 1 can now run. Return its resources: $A = [4, 2, 3, 1]$. Mark process 1.
 
-Unfortunately, swapping a process to disk is very painful. If the process is using 1~GB of memory, to swap a process out to disk, we need to write 1~GB of memory to disk. To load that process back later, it means reading another 1~GB from disk and putting it into main memory. If 1~GB strikes you as ridiculous in size, according to the Mac OS~X system utilities, with five PDF documents (whose combined file size on disk is 80.6~MB) open, the ``Preview'' application is consuming 2.05~GB as I write this. So, swapping is something we would like to do as little as possible, but it will be necessary eventually. 
+There are no remaining unmarked processes in the system, and therefore no deadlock. As a sanity check, compare vector $E$ and the final values for $A$ -- they should be the same if there is no deadlock.
 
-Modern operating systems do not perform this kind of swapping because it is simply too slow. Too much time would be wasted swapping processes to and from disk. A modified form of swapping is used, but this is a subject we will return to later on in the examination of memory~\cite{osc}.
+\subsection*{The Assumption Algorithm}
 
-When swapping a process back in from disk it is not necessary to put it back in exactly the same place as it originally was. This works because the relocation register will be updated with the new location of the process when it is moved back to memory. See the diagram below showing the state of memory after seven swap operations.
+One other way we could detect deadlock is just by assuming it. If we have started some operation and it is taking too long, we can assume that a deadlock occurred and decide to take action. Obviously, it is possible that the operation is just taking incredibly long and is not stuck; however, user patience is limited. 
 
-\begin{center}
-\includegraphics[width=0.8\textwidth]{images/swapping2.png}\\
-A view of memory over time, swapping processes in and out as needed~\cite{mos}.
-\end{center}
+This does mean we might declare a deadlock when there really is none. This is a tradeoff we may have to accept due to not having full information about the state of all threads/processes.
 
-In (a), the only process in memory is $A$. In (b), process $B$ is added and in (c) process $C$ starts and is loaded into memory. When process $D$ would like to run, there is insufficient free space for it, so a process will need to be swapped out. In (d), process $A$ is chosen by the OS and is swapped out so that in (e) process $D$ may be in memory. If $A$ is ready to run again, space must be made for it, so $B$ is swapped out in (f) and then when $A$ is loaded the state of memory is as shown in (g).
+One way to implement this is via a watchdog timer. When starting something that might get deadlocked, you also begin a timer. If the task finishes first, then cancel the timer; if the timer fires, then deadlock is assumed and we take a resolution action.
 
-Thus far we have considered process memory as a large, fixed-sized block. A process gets a big section of memory and operates in that area. As you know from previous programming experience, use of the \texttt{new} keyword in some languages, or \texttt{malloc()} in C, will result in dynamic memory allocation. We will have to deal with this next.
+\subsection*{When to Detect Deadlock}
+The runtime characteristic of the simple deadlock detection algorithm was identified as $\Theta(n^{2})$, and the runtime characteristic of the general algorithm was shown as $\Theta(m \times n^{2})$ where $n$ is the number of processes and $m$ is the number of resources in the system. This means that the deadlock detection routine is expensive to execute.
+
+This prompts a question: how often should the deadlock detection algorithm be run? One strategy is to run it every time a resource is requested. Running the algorithm might be rather expensive, so perhaps this is too often. An obvious optimization: it should only run every time a resource request cannot be granted (that is, a process gets blocked). Another idea: run it periodically instead.
+
+When to run the deadlock detection algorithm depends on how often we expect deadlock to occur, and how severe a problem it is when deadlock occurs. If deadlock happens a lot, checking for deadlock often will make sense. If the consequences of a deadlock are severe, it makes sense to check frequently to identify the problem as soon as possible.
+
+Several sources including~\cite{mos} suggest running the deadlock detection algorithm when CPU utilization is low. This is not only because it would be a bad idea to run an algorithm that is time consuming and computationally expensive while the system is busy. When a deadlock is present in the system, many processes are stuck and cannot proceed, so a drop in CPU usage may be an indication that many processes are deadlocked.
+
+\section*{Deadlock Recovery}
+Once a deadlock has been detected, a system can recover from that deadlock by ``breaking'' the deadlock. These are called recovery strategies and they are ways the system may automatically deal with the problem. It is possible to have a manual form of deadlock recovery, where an operator is notified and that person is responsible for sorting out the problem, but the manual method needs no further discussion.
+
+\subsection*{Recovery Strategies}
+There are several strategies that we could apply, which we will refer to in humorous terms. All are valid solutions of various complexity. Unfortunately, none of the solutions are particularly pleasant. They can result in data loss, delays in completion of programs, or some other problems.  Ideally we would like to break the deadlock with as little disruption as possible, so the strategies that rely on selection of one or more victims should choose carefully. These strategies are not mutually exclusive; a system may implement all of them.
+
+
+\subsubsection*{Robbery}
+The strategy of ``robbery'' is just a humorous way of saying preemption. This is virtually identical to the discussion of knocking down the pillar of deadlock for deadlock prevention; the only difference is that recovery is run only when deadlock is detected. Suppose a process $P_{1}$ has a resource $R_{1}$ and needs $R_{2}$, while a process $P_{2}$ has $R_{2}$ and needs $R_{1}$. We may block process $P_{2}$ and take away $R_{2}$ from $P_{2}$ and allow $P_{1}$ to have it. After that resource becomes available again, it is returned to $P_{2}$. In the general case, the system will take resources from (``rob'') some process(es) and give those resources to other processes until the deadlock cycle is broken. To do so, the system needs to choose a victim to rob; a subject we will examine shortly.
+
+The resource should be an appropriate type to be preempted: it must be possible to save and restore the state. Preemption of a printer is not realistic, nor is memory. However, other resources, like a processor or access to the network, may be. If the state of the resource cannot be saved and restored, then preemption is not a good strategy.
+
+
+\subsubsection*{Mass Murder}
+If a deadlock is detected, we may choose to terminate (kill) all the processes involved in the deadlock. This solution is surprisingly common. It is one way to be certain that the deadlock cycle is broken. The resources that these processes were holding will become available. There is no need to determine a victim: kill 'em all and let root sort them out.
+
+This solution, while easy to implement, may not solve the problem, however, as the circumstances that caused the deadlock may occur again if all the processes are restarted. If the deadlock were an unlikely situation caused by ``unlucky'' timing then it will probably not recur, or at least, will not recur for some time.
+
+If processes $P_{1}$ and $P_{2}$ are deadlocked, however, is it really necessary to kill both of them? If we killed only one, the other could proceed...
+
+\subsubsection*{Murder}
+Perhaps instead of killing all processes involved in a deadlock, instead, we might kill processes selectively. Like preemption, selecting which process is the victim is important. When the victim is killed, its resources are added to the available set and this will hopefully allow other processes to proceed. At this point, the deadlock detection algorithm must run again to determine if a deadlock still exists; if not the problem is dealt with, but if so, this strategy needs to be repeated (select a new victim, kill it, free up its resources, and determine if deadlock is still present) again and again until the logjam is broken.
+
+
+
+\subsubsection*{Time Travel}
+Time travel is just a clever way of saying \textit{rollback}: returning the state of a process to a saved state from an earlier time. To do so, of course, there must be a saved state that was created in advance of a problem (otherwise there is no state to roll back to...). The saved state is called a \textit{checkpoint} and the act of creating and saving a checkpoint is called \textit{checkpointing}\footnote{Once again, verbing weirds language.}. Checkpoints may be created periodically or before beginning a particular operation that requires a lot of resources.
+
+A checkpoint contains the memory image, including the call stack, and resource state of a process. It is written to disk and will usually persist as long as the process continues to execute.
+
+You might already be somewhat familiar with the concept of rollbacks if you have used version control software like Subversion (\texttt{svn}) or Git (\texttt{git}). A previous state of the source code is saved and if a developer commits a change that is detrimental  to the software, that change can easily be undone by reverting the state of the source files to an earlier version. Rollbacks are also common in databases; if an attempted modification of a database record fails for some reason, such as data being too long for a field, then the state of the database is restored to what it was before the attempted change.
+
+Unfortunately, rollback does not always succeed. Sometimes moving the process back to an earlier state just moves it a few steps back on the same road that leads to the deadlock.  Or a different ordering of events and resource requests may avoid the deadlock entirely. Rollback may be attempted a few times before giving up and trying another strategy.
+
+
+\subsubsection*{Armageddon}
+Armageddon - the end of the world. If a deadlock has occurred, sometimes the best thing to do is reboot the system. This has a side effect of killing all processes, whether they are stuck or not, but is sometimes the best way to make sure that the system is in a valid state. NASA's Spirit rover, one of the missions to explore the red planet, relies on this strategy if it detects a deadlock. Like killing all affected processes, it is easy to implement, but is most disruptive.
+
+
+\subsection*{Victim Selection}
+If we have to choose a victim process for one of the strategies, e.g., termination, then we need a strategy for which process to choose. We could choose randomly: kill a process and hope that that was enough. Sometimes this will work, because it breaks the deadlock and the other processes can all proceed. In general, however, making an informed decision is better.
+
+Note that it is, strictly speaking, not necessary to choose one of the processes involved in the deadlock. For example, if $P_{1}$ and $P_{2}$ are deadlocked, a process $P_{3}$  may have an instance of a resource that $P_{1}$ needs, and killing $P_{3}$ will allow both $P_{1}$ and $P_{2}$ to proceed.
+
+We can think of this as kind of an optimization problem. Define a cost function for choosing each process, evaluate the cost function, and then choose the lowest cost. Some factors to consider in selection of processes~\cite{osc}:
+
+\begin{enumerate}
+	\item The priority of the process.
+	\item How long the process has been executing.
+	\item How long is remaining in execution, if known.
+	\item What resources the process has (number and type).
+	\item Future resource requests, if known.
+	\item Whether the process is user-interactive or in the background.
+	\item How many times, if any, the process has been selected as a victim.
+\end{enumerate}
+
+These sorts of selection routines tend to favour older processes rather than younger ones. This is not because older processes vote in higher numbers, but because it tends to be more expensive to restart an older process. A process that has been running for a long time, if it is restarted, has to do a lot more work to get to the point where it was terminated than a younger process. Another reason: if the oldest process were constantly the one selected, that process itself might never get to run to completion (starvation) because it is constantly killed before it finishes. A third reason is somewhat more subtle: if the killing process is very aggressive then perhaps no tasks run to completion because each process, shortly after becoming the oldest, is claimed by the deadlock recovery process. Therefore, young processes tend to be the ones selected.
+
+The final element in the list, keeping track of how many times a process has been victimized, is also there to prevent starvation. The selection process very likely produces the same or similar results each time it is run, so it may happen that the same process is selected over and over again. It may be advisable to take the number of rollbacks or terminations into account so that no process in particular is starved.
+
+\paragraph{Miscarriages of Justice}
+The deadlock detection algorithm we have chosen tends to be conservative in that it will err on the side of saying that there is a deadlock. This is because the worst case is assumed: that processes take resources and keep them until the end of their execution. In practice, however, processes will release resources (or at least they should!) so we might detect a deadlock when there is none. We may also, then, kill an innocent process in a system that is not actually deadlocked. Oops!
+
+It turns out that our deadlock detection algorithms do not have to be perfect if we have chosen an appropriate recovery strategy. If killing the process and restarting it does not have unexpected side effects (like asking the user the same question a second time), then being selected does not have an impact on the correctness of the program; just on how long it takes to execute. Suppose the process is a compiler. It reads the source files, processes that input, and produces the binary output file. If partway through, this task is terminated and has to start again, it takes slightly longer for the compile to finish, but there is no impact on the correctness of the binary.
+
+\section*{Livelock}
+
+Usually we like to think that our recovery strategy is, well, effective, and means that (at least the surviving) threads become able to continue. Unfortunately, no; sometimes the action we have taken to resolve deadlock just results in ending up at the same impasse again soon thereafter. This was mentioned when talking about rollback as a strategy, but could happen regardless of the actions we take.
+
+Deadlock recovery strategies are not the only way to end up in livelock, mind you. Imagine if the Dining Philosophers all used two-phase locking. Imagine each of them doing the same steps at the same time in perfect synchronicity: pick up a chopstick, fail to get the other chopstick, put down the first, go back to step one. They would all perform the same set of actions repeatedly, but would never get to the critical step: eat. Also, their perfect synchronicity would probably make them look like they were in a music video.
+
+In real life, it is unlikely that $n$ threads executing on a general purpose operating system would achieve this sort of perfect lock-step. Random fluctuations in timing or interrupts or just the scheduler doing its job would result in someone eventually being lucky enough to acquire both chopsticks and eat. However, as execution of tasks takes on longer timeframes (e.g., jobs that run for hours, not microseconds), deadlock may repeatedly occur, be detected, a recovery strategy runs, and we do the same things that lead to the same problem again. 
+
+One problem with livelock is that it is harder to detect than deadlock. In deadlock, threads are known to be blocked and analysis tools (e.g., a debugger) can tell you at what statement those threads are blocked. With livelock, it seems like the threads are running and working, but somehow no work is getting done. For this reason, a well-designed recovery strategies may have some sort of limit on the number of retries before concluding this won't work and either going to a different strategy or involving an operator.
+
 
 \input{bibliography.tex}
 
