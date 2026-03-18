@@ -78,7 +78,6 @@ Now we finally have a good answer to why the application developer can treat mem
 
 We also get protection in this scheme: a program cannot access any address outside of its memory space. There is simply no way to make a memory request outside of the logical memory space. No matter what address is generated, it could only be inside the page table, and the page table has only entries of that process.
 
-The operating system, however, can manage memory of all processes, so it will need another scheme. The OS will operate on the \textit{frame table}, a listing of all the frames, indicating which page of which process a frame currently holds, if any.
 
 \subsection*{Shared Pages}
 
@@ -86,16 +85,7 @@ Another great advantage of paging is the possibility of sharing of common code. 
 
 Example: consider the text editor \texttt{vi}. Imagine there are 5 users on the system, each of whom wants to use \texttt{vi}. Let's say the program itself uses 10 pages (made up number) on its own, and then some variable number of pages based on what file is being edited. Without sharing, each copy of \texttt{vi} that runs will consume 10 pages, so 50 pages are being used for the executable. If we can share those 10 pages, we have saved 40 pages worth of memory space.
 
-Other programs and code can easily be shared, such as compilers, libraries, and operating system utilities. In fact, any code can be shared as long as it is \textit{reentrant} (also sometimes called pure or stateless). This is code that does not change when it is executed. That means there is no state maintained by the code. Any function that accesses a global or static variable is non-reentrant, such as~\cite{mte241}:
-
-\begin{verbatim}
-int tmp;
-void swap( int *x, int *y ) {
-  tmp = *x;
-  *x = *y;
-  *y = tmp; 
-}
-\end{verbatim}
+Other programs and code can easily be shared, such as compilers, libraries, and operating system utilities.
 
 \subsection*{Page Table Structure}
 In the simplest form, the page table is just a standard table. This structure is simple, but page tables can be very large. If the system is 32-bit, and page sizes are 4~KB ($2^{12}$), then the page table has $2^{32}/2^{12} = 2^{20}$ pages, or about 1 million entries. Given that page tables themselves can be quite large, we will examine three strategies for how to structure the page table, other than the simple table structure:

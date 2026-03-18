@@ -354,20 +354,6 @@ No matter what address is generated, it could only be inside the page table, and
 \end{frame}
 
 \begin{frame}
-\frametitle{Pages: The OS View}
-
-The operating system, however, can manage memory of all processes, so it will need another scheme. 
-
-\begin{center}
-	\includegraphics[width=0.4\slidewidth]{images/frametable.png}
-\end{center}
-
-The OS will operate on the \alert{frame table}, a listing of all the frames, indicating which page of which process a frame currently holds, if any.
-
-
-\end{frame}
-
-\begin{frame}
 \frametitle{Shared Pages}
 
 Another great advantage of paging is the possibility of sharing of common code. 
@@ -392,36 +378,7 @@ Without sharing, each copy of \texttt{vi} that runs will consume 10 pages, so 50
 
 If we can share those 10 pages, we have saved 40 pages worth of memory space.
 
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Sharing Code}
-
-Other programs and code can easily be shared, such as compilers, libraries, and operating system utilities. 
-
-In fact, any code can be shared as long as it is \alert{reentrant} (also sometimes called pure or stateless). 
-
-This is code that does not change when it is executed. 
-
-That means there is no state maintained by the code. 
-
-
-\end{frame}
-
-\begin{frame}[fragile]
-\frametitle{Non-Reentrant Code}
-
-Any function that accesses a global or static variable is non-reentrant.
-
-\begin{verbatim}
-int tmp;
-void swap( int *x, int *y ) {
-  tmp = *x;
-  *x = *y;
-  *y = tmp; 
-}
-\end{verbatim}
+Other programs and code can easily be shared, such as compilers, libraries, and operating system utilities.
 
 \end{frame}
 
