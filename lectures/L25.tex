@@ -2,100 +2,132 @@
 
 \begin{document}
 
-\lecture{ 25 --- Virtual Memory II }{\term}{Prepared by Jeff Zarnett, taught by Seyed Majid Zahedi}
+\lecture{ 25 --- Virtual Memory }{\term}{Prepared by Jeff Zarnett, taught by Seyed Majid Zahedi}
 
-\section*{Virtual Memory, Continued}
+\section*{Virtual Memory}
+Even with paging and moving pages into and out of memory, there is a limit on what we can do with the system. Specifically, a program that requires more memory than the machine's physical memory cannot run. Maybe that seems ridiculous in the modern era of 4, 8, and 16~GB of memory, but server or supercomputer systems working on large datasets may require more memory than is available in the machine. Furthermore, when we have many programs running and a multiprocessor system, we could have a situation where the sum of memory requirements exceeds the available memory. It is less than ideal to have a processor waiting for something to do because a process that is otherwise ready to run cannot proceed because there are insufficient free frames for it to run.
 
-We will continue with our discussion of virtual memory by looking at a few advanced considerations in virtual memory.
+The problem is: a process must be entirely in memory or entirely on disk. In a lot of cases, the entire program is not needed at any given time. Code used to handle unusual situations (error handling, etc.) may not be needed except occasionally. Startup code is needed at the beginning of the program, but then never again. Data structures and collections may be declared to be very large even when it is not actually needed (e.g., the \texttt{ArrayList} in Java defaults to 16 elements, even if you might only need 4, wasting a bit of space).
 
-\subsection*{Allocation of Frames}
-In a simple system where we do not do anything advanced, if there are $n$ frames free in the system, we will demand page all of them. So the initial state is that all frames are empty, and as needed, pages are read into those frames. Once all $n$ frames are filled with pages, page $n+1$ must replace a page already in a frame (because there is no more space). When a process terminates, all its frames are marked as free. In theory, one process could fill all the frames in the system. This is as simple as it can be; from there we can build on it.
+If we could execute programs that are only partly in memory, there would be three major benefits~\cite{osc}:
 
-We might reserve a few pages to be free at all times for performance considerations. When we want to move a page into a frame, if all of the frames are full, we select a victim and write that victim out to disk if necessary. If we keep a few frames free, the newly-read page can be read into one of the free frames, and we can write the old page out to disk at a convenient time. The read does not need to wait for the write (flush of the old page) and therefore the user process gets to continue a bit sooner than it otherwise would.
-
-Assuming, as we did with cache, that we might want to allocate different numbers of frames to different processes (and not necessarily let one run wild), we are constrained in the number of pages we can allocate. The maximum number of frames a process could have is the maximum number of frames in the system (obviously), but the minimum is more interesting.
-
-The motivation behind allocating at least a minimum number of frames is ostensibly performance. As long as our page replacement algorithm is sane (i.e., not FIFO), adding more frames reduces the page fault rate. As we demonstrated earlier, a page fault is a huge performance decrease. 
-
-The absolute minimum number of frames is determined by the architecture of the system. Imagine a machine where a memory reference instruction may contain one memory address. In the worst case, the instruction and the address are in different pages, so we will need two frames to be able to complete this instruction. If the max frames for this process were 1, the instruction could never be completed.  The IBM 370 \texttt{MVC} instruction is an extreme example: it moves data from one storage location to another. It takes six bytes, and the instruction itself can straddle two pages. That requires six frames. The worst case scenario is when the \texttt{MVC} instruction is the operand of an \texttt{EXECUTE} instruction that also straddles a page boundary. So eight frames are needed~\cite{osc}.
-
-In theory, the problem could be infinitely bad if the computer architecture allows referencing of an indirect address. The address being referenced could be on another page. That instruction could then reference another indirect address, and it's turtles all the way down. If that is the case, the entire virtual memory must be in main memory (so, not possible). The standard solution is to limit the levels of indirection to some manageable value, like 16. Rather like recursion leading to a stack overflow, it is possible that a stack overflow prevents a program that is correct from running, but more likely the program is in an infinite loop and it is better off terminated. If we limited the levels of indirection to 16, then the worst case scenario is a requirement of 17 pages~\cite{osc}.
-
-Assuming we do not allocate every process the minimum or maximum, there are a few allocation algorithms we might follow. We already got a glimpse at this when we talked about local vs. global cache replacement.
-
-If there are $m$ frames in the system and the operating system reserves $k$ of them for its own use, there are $m-k$ frames available for processes.
-
-\paragraph{Equal Allocation.}  If there are $n$ processes in the system, if we allocate them equally, each process gets $(m-k)/n$ frames. If this division produces a remainder, the leftover frames can be kept as a pool of free frames for performance purposes as above. There is an obvious flaw in this plan: why does a text editing program get the same amount of frames as a web browser and the same amount of frames as a game (which tends to be VERY demanding on memory).
-
-\paragraph{Proportional Allocation.} So how about proportional allocation: each process should get a share of the frames based on its needs. The strategy suggested in~\cite{osc} to do frame allocation runs something like this. Let the virtual memory size of a process $p_{i}$ be defined as $s_{i}$. Thus $S = \Sigma s_{i}$. If the total number of frames in the system is, once again, $m$, and the operating system reserves $k$ for itself, then we allocate $a_{i}$ frames to a process $p_{i}$ according to the following formula: $a_{i} = (m - k) \times s_{i} / S$.
-
-This value of $a_{i}$ is only an estimate. It may not divide evenly, and we can only allocate an integer number of frames to each process.  So we will have to raise or lower $a_{i}$ a bit to make it an integer. If $a_{i}$ is below the minimum number of frames, then it needs to get bumped up to that minimum. We also must respect the limits of the system: the sum of all $a_{i}$ values may not exceed the total frames of memory (minus the OS reserve), so a few of the larger processes may need to have their allocations nudged down.
-
-Note that with proportional allocation, as with equal allocation, there is no regard given to the priorities of the processes. Normally, we would want to give more frames to higher priority processes so their page fault rates are lower and they can therefore execute more quickly. So we could modify the $a_{i}$ values according to process priority, as well~\cite{osc}. The subject of priority is something we have not yet examined much yet, but will do so soon when we get to talking about scheduling; the next major topic. But, first, let's finish what we are doing with memory.
-
-\paragraph{Local and Global Replacement.}
-We already saw the idea of local replacement and global replacement in the cache. To refresh your memory, if we have chosen the LRU algorithm, in a global replacement policy, the least recently used page anywhere in the cache (memory) will be replaced. If we chose a local page replacement policy, it is the least recently used page that belongs to the current process.
-
-Local is not affected much by our allocation concerns, so we can more or less leave that alone. 
-
-Suppose we choose global allocation. We will see the number of pages allocated to each change over time. If we assigned a colour to each process, it might be a bit like watching a little simulation of fictional countries as they fight over land, gaining and losing territory. Over time, a global replacement algorithm means processes that run more often will accumulate more pages in memory as they will acquire more pages than get taken from them.
-
-It might make sense to watch to see how many frames each process has. It may be desirable to prevent a process from falling below the minimum number of pages, or to swap completely to disk a process that no longer meets that threshold. 
+\begin{enumerate}
+	\item A program is no longer constrained by the size of physical memory; programmers can use the entire virtual space without worrying about whether it fits.
+	\item Each program could use up less physical memory, allowing more processes to execute concurrently.
+	\item Less I/O is needed to swap user programs in or out.
+\end{enumerate}
 
 
-\subsection*{Thrashing}
-Thrashing received a little bit of mention in the introduction to virtual memory, but it deserves some further consideration. The quick definition of thrashing still applies: the operating system is spending so much time moving pages into and out of memory that no useful work gets done. Aside from intentionally depriving the system of RAM (as in the NeXTStep scenario), how can we get into this state, and how can we get out of it?
-
-Let's consider a simple example from~\cite{osc}. In simple operating systems, the logic that controlled how many processes to run at a time would rely just on the CPU utilization. If CPU utilization is low, the CPU needs more work to do! Assign it more work by starting or bringing more processes into memory. The global page replacement policy is used here, so when a process gets a page fault, it takes a frame from another process. Under most circumstances, this works just fine.
-
-This situation is not obviously wrong until one process starts to have a lot of page faults. This is not unreasonable; a compiler might be finished with reading and parsing the input files and moving to generation of binary code, for example, which requires a whole bunch of new instructions pages, plus the pages for the output. When this process does so, it starts taking pages from other processes. The victim processes need the pages they had, so when they get a turn to run, they too start generating page faults. So more and more requests are queued up for memory writes and reads, so the CPU is not very busy. Here's the fatal mistake: seeing that the CPU is not very busy, the OS schedules \textbf{more} programs to run.  
-
-A new process getting started will need at least the minimum number of pages to get started. These have to come from somewhere, so they will necessarily come from the pages currently belonging to other processes. This causes more page faults and more time spent paging and lower CPU utilization... prompting the OS to start more processes. No more work is getting done, because the system spends all its time moving pages into and out of memory, thrashing all around, acting like a maniac\footnote{Whiplash! ... If this joke means nothing to you, it's also because I'm old.}.
+Good news, everyone!  We have already discussed many of the key ideas to making such a system work when we examined caching. The principle is really the same: main memory can be viewed as yet another level of cache and the disk is the last stop where the data can be. If a page is referenced and not currently in main memory, it is a page fault, and the page is loaded from disk into main memory. A page might need to be evicted from main memory to make way for it; thus a page replacement algorithm is needed to select the ``victim'' page and write it out to disk. 
 
 \begin{center}
-\includegraphics[width=0.5\textwidth]{images/thrashing.png}\\
-Thrashing~\cite{osc}.
+\includegraphics[width=0.5\textwidth]{images/vmem-physmem.png}\\
+Virtual memory exceeding the size of physical memory, with some pages on disk~\cite{osc}.
 \end{center}
 
-The solution is simple, actually; to increase CPU utilization we need to stop the thrashing which means we need fewer programs in memory at a time. What this really tells us is that CPU usage alone is not a sufficient indicator of whether more or fewer processes need to be running right now. It also matters \textit{why} the CPU utilization is low. Another reason that might cause low CPU usage is, as you may recall, deadlock. 
+The typical approach is also like that of the cache, which is to use demand paging. A page is loaded into memory only if it is referenced or needed, thus preventing unnecessary disk accesses. This is also called the ``lazy'' approach in~\cite{osc}, though lazy is typically an insult and in this case it is not necessarily bad.  Clearly, we would like to involve disk as little as possible, because disk is, from the perspective of the CPU, extremely slow.
 
- What if we stop using a global replacement policy and instead force local replacement? This limits some of the damage; if Process $P_{1}$ is thrashing,it cannot steal pages from $P_{2}$ and we do not get a cascade where all processes are constantly fighting over who has how many pages. But, if $P_{1}$ is spending all its time paging to and from disk, any other process that wants to use the disk (whether to swap or to interact with files) is going to have to spend more time waiting for the disk to be free.  
- 
-We could decide whether we need to start or suspend programs not just based on CPU usage, but also on the number of page faults that occur in a given period of time. If there are too many page faults, it indicates we have too much going on. That is a reactive solution, however, and might only engage after a fair amount of time and effort has been wasted in thrashing. It would be better to be proactive and deal with this before thrashing has started.
- 
-As is typical, a bit of clairvoyance would help here: how many pages is the process going to need and when will it need them? Unfortunately, there is no good way to know or to figure this out. So we will have to rely on (educated) guessing. You may hate the idea of guessing. As a general engineering practice, ``let's do an experiment and find out'' is good, provided you can analyze the result and if things go horribly wrong, no damage is done. Those last conditions make it kind of infeasible to do medical experiments just to see what would happen, or for NASA to play around with satellites in orbit. So in those cases, a simulation is probably the better approach. Even so, sometimes we don't have (or can't get) the data we need and we will therefore need to ``make our best guess''. But we are digressing.
+The fact that disk is so slow means we can get into a troublesome state called \textit{thrashing}: the operating system is spending most or all of its time swapping pages in and out of memory and very little actual work can get done.
 
-What do we know about process memory accesses? They tend to obey the principle of locality, both temporal and spatial. Recall this from the discussion about caching. We could think of different parts of the program as different localities, as if they were areas on a map. And localities may overlap sometimes. So what we would like to do, then, is give a process enough frames for its locality. If we do so, it can operate in this little area without encountering (too many) page faults. If we give insufficient pages, the process will be thrashing. Eventually it will leave the locality and that will result in some more page faults, but this is generally unavoidable~\cite{osc}.  
+Apparently, if the NeXT operating system, NeXTStep\footnote{One of the three parents of Mac OS X: the classic Mac OS, BSD [UNIX], and NeXTStep.} were booted on a machine with only 2~MB of RAM instead of the expected 4~MB, the steady state of the system would be a constant level of swapping~\cite{mte241}. This was particularly bad because the most common cause of failure in the NeXT boxes was hard disk drive. But they did have cool magnesium cases, so after they died they at least made impressive conversation pieces and doorstops.
 
-Before coming up with a solution that relies on locality, it is a good idea to check that the principle of locality holds. Fortunately we do not have to verify this for ourselves; someone else has already done so:
+With virtual memory, each memory reference is a six step process~\cite{osc}:
+
+\begin{enumerate}
+	\item Check if the memory reference is valid or invalid (just as we have done before).
+	\item If the reference is invalid, terminate the program (segmentation fault). If it was valid, but the page referenced is not in memory, we will need to retrieve it.
+	\item Find a free frame (or make one by evicting some other page).
+	\item Request a disk read (and possibly write) to bring in the new page.
+	\item When the disk read is complete, update the records to show the new page is in memory.
+	\item Restart the instruction that referenced the page that needed to be brought into memory.
+\end{enumerate}
+
+Or, to view this visually:
 
 \begin{center}
-\includegraphics[width=0.75\textwidth]{images/locality.png}\\
-Graph showing the locality of memory accesses -- it is real!~\cite{locality}.
+\includegraphics[width=0.7\textwidth]{images/handling-page-fault.png}\\
+Handling a page fault~\cite{osc}.
 \end{center}
 
-The take-away from this graph is that yes, locality is real. Given that, we can now move on and use it.
+Note that between steps 4 and 5, a significant amount of time will take place while the disk performs a read of the desired page and possibly a write of the page to be evicted if it was modified. While the slow disk operations are going on, the process is blocked on that I/O operation and, in the meantime, the processor can and should be working on something else.
 
+The key requirement in the described workflow is the ability to restart any instruction following the page fault. We save the state of the process, including all the registers and instruction pointer and so on, when the page fault occurs, so we are able to restart the process exactly where it was. The difference is that after the restart, the page needed is in memory and is accessible. A page fault could occur on any memory reference, including fetching the next instruction. If it happens at that time, the fetch operation is done again. If a page fault happens when doing an operation that required fetching an operand, then we fetch and decode the instruction again and then fetch the operand. So a little bit of work may be repeated~\cite{osc}.
 
-\subsection*{The Working-Set Model}
+Consider the \texttt{ADD} instruction that adds \texttt{A} to \texttt{B} and stores the result in \texttt{C}. First, we must fetch and decode the instruction. That tells us about the two operands, which must be retrieved themselves. Then we can add the two operands, and store the result in the target location. If a page fault occurs when trying to write to \texttt{C}, because that page is not currently in memory, we will restart the instruction. That means back to step one: fetch the \texttt{ADD} instruction again, then get the operands, then perform the addition, and finally write it into the destination location~\cite{osc}.
 
-A potential solution is the working-set model as described in~\cite{osc}. We retain the last $n$ pages in memory as they represent the locale of the program. Assuming that most memory accesses are local, the most recent $n$ pages will be the most frequently used. In the textbook descriptions, this $n$ is usually called $\Delta$,the working set window. Pages that have been recently used are in the working set. If a page has not been accessed recently, it will drop out of the working set after $\Delta$ time units since its last reference. 
+As we can see, some work is repeated here: fetching and decoding the instruction, as well as taking the operands and doing the addition. This is not a big deal, because the time it takes the CPU to do such an operation is minuscule. CPUs are very good at executing instructions and doing this one a second time is not a big task.
 
-Suppose the window is defined as being ten accesses. Any page that was accessed in the last ten requests will then be considered part of the working set. If the next ten memory accesses are all in page $k$, then after those further ten accesses, the working set will contain only $k$. So the size of the working set will change over time and can be anywhere from 1 to $\Delta$ pages.
+While fetching the page containing \texttt{C} from disk, the page that contains \texttt{A} or \texttt{B} could get swapped out, meaning that the second run of the instruction will also produce a page fault. This is unlikely if using a sane replacement algorithm, because the page with \texttt{A} and \texttt{B} having just been referenced, it is a poor candidate for eviction. But a random page replacement algorithm could result in that behaviour on occasion. While hypothetically possible, it is very unlikely that a system would get stuck on the same instruction forever if the page containing \texttt{A} were constantly replaced in memory and cache by the page containing \texttt{C} and vice versa. But a system vulnerable to this problem would have some very significant design issues, to say the least.
 
-If $\Delta$ is too small, the working set will not encompass the entire locale. If it is too large, it will cover multiple locales. Underestimating the size of the locale is bad, because it will mean more page faults being caused. Overestimating is also bad, because it means fewer processes will be allowed to run.
+The question is, can every instruction be restarted without affecting the outcome? The answer is no; an example is the situation that occurs when an instruction modifies more than one memory location. If we are moving a block of $n$ bytes, it is possible those bytes will straddle a page boundary\footnote{Some CPUs and operating systems have boundary issues and take this kind of thing a bit more seriously, requiring alignment of data structures to byte and block boundaries... others don't seem to mind at all.}, either at the source or destination. We would like to avoid this situation, because the move operation may not be easily restarted if the source and destination overlap (i.e. the source is modified). One is for the CPU to try to access the start and end addresses before the move begins; if one of the pages needed is not in memory, the page fault is triggered before any data is changed, so we can be sure the move will succeed when it actually starts. Another solution is temporary registers to hold overwritten location; if a page fault occurs, then the temporary data is restored so the instruction may be restarted without affecting the operation's correctness~\cite{osc}.
 
-If the working set of every process is summed up, we will get the total number of frames each process would ``like'' to have. If this sum exceeds the $(m-k)$ available frames in the system, at least one process is going to be unhappy because it does not have as many frames as it will need. And like unhappy workers who go on strike, unhappy process start thrashing.
+\subsection*{Virtual Memory Performance}
 
-Once a value of $\Delta$ is determined, the OS will monitor the working set of each process and use that to figure out if the system is currently overloaded. If it is, the OS will pick a victim and suspend it to prevent thrashing. If the system is underloaded (frame supply exceeds demand), more processes can be started to run.
-
-Now we should examine how this solution works. The page fault rate of a process tends to vary over time. At the beginning, there will be a bunch of page faults as the program starts up. Then once established in its first locale, the rate will drop. When it come time to move to a new locale, the page fault rate rises until the program is ``settled'' in that new locale. See the graphic below:
+As we have already seen, finding something in the cache is significantly faster than having to go to main memory. Retrieving something from disk is dramatically slower, but computing how long it takes to retrieve a given page will follow the same principle. Recall from earlier the effective access time formula:
 
 \begin{center}
-	\includegraphics[width=0.5\textwidth]{images/workingset.png}
+	Effective Access Time = $ h \times t_{c} + (1 - h) \times t_{m}$
 \end{center}
 
-Here's an analogy. Imagine that you have moved to a new city for a co-op term. When you have just moved, you will frequently rely on Google Maps (or whatever other map program you like... or even, dare I say it, the paper ones?!) to find what you are looking for and how to get there. You need to buy groceries, so you ask Google for directions to the nearest grocery store of choice. Once you've been there, you know the way so you don't have to ask again. Not knowing where the grocery store is equals a page fault, and asking Google is like asking the operating system to bring in that page from disk. Once you know the way to the grocery store, it is part of your working set and you do not have to ask again... until your next co-op term when you move somewhere else.
+Where $h$ is the hit rate, $t_{c}$ the time to retrieve a page from cache, and $t_{m}$ is the time to retrieve it from memory. If we replace the terms $t_{c}$ and $t_{m}$ with $t_{m}$ and $t_{d}$ (time to retrieve it from disk) respectively, and redefine $h$ as $p$, the chance that a page is in memory, we can get an idea of the effective access time in virtual memory: 
+
+\begin{center}
+	Effective Access Time = $ p \times t_{m} + (1 - p) \times t_{d}$
+\end{center}
+
+And just while we're at it, we can combine the caching and disk read formulae to get the true effective access time for a system where there is only one level of cache:
+
+\begin{center}
+	Effective Access Time = $ h \times t_{c} + (1 - h) ( p \times t_{m} + (1 - p) \times t_{d})$
+\end{center}
+
+This is good, but what is $t_{d}$? This is a measurable quantity so it is possible, of course, to just measure it\footnote{One of my favourite engineering sayings is ``Don't guess; measure.''}. We expect $p$ to be large if our paging algorithm is any good. But what needs to take place to handle a page fault (miss) is~\cite{osc}:
+
+\begin{enumerate}
+	\item Trap to the operating system.
+	\item Save the user registers and process state.
+	\item Identify this interrupt as a page fault.
+	\item Check that the page reference was legal. 
+	\begin{enumerate}
+		\item If so, determine the location of the page on disk.
+		\item If not, terminate the requesting program. Steps end here.
+	\end{enumerate}
+	\item Figure out where to place the page in memory (use our replacement algorithm).
+	\item Is the frame we have selected currently filled with a page that has been modified? 
+	\begin{enumerate}
+		\item If so, schedule a disk write to flush that page out to disk. The disk write request is placed in a queue.
+		\item If not, go to step 11.
+	\end{enumerate} 
+	\item Wait for the disk write to be executed. The CPU can do something else in the meantime, of course.
+	\item Receive an interrupt when the disk write has completed.
+	\item Save the registers and state of the other process if the CPU did something else.
+	\item Update the page tables to reflect the flush of the replaced page to disk. Mark the destination frame as free.
+	\item Issue a disk read request to transfer the page to the free frame.
+	\item As before, while waiting, let the CPU do something else.
+	\item Receive an interrupt when the disk has completed the I/O request.
+	\item Save the registers and state of the other process if the CPU did something else.
+	\item Update the page tables to reflect the newly read page.
+	\item Restore the state of and resume execution of the process that encountered the page fault, restarting the instruction that was interrupted.
+\end{enumerate}
+
+The slow step in all of this, is obviously, the amount of time it takes to load the page from disk. According to~\cite{osc}, restarting the process and managing memory and such take something like 1 to 100~$\mu$s. A typical hard drive in their example has a latency of 3~ms, seek time (moving the read head of the disk to the location of the page) is around 5~ms, and a transfer time of 0.05~ms. So the latency plus seek time is the limiting component, and it's several orders of magnitude larger than any of the other costs in the system. And this is for servicing a request; don't forget that several requests may be queued, making the time even longer.
+
+Thus the disk read term $t_{d}$ dominates the effective access time equation. If memory access takes 200~ns and a disk read 8~ms, we can roughly estimate the access time in nanoseconds as $(1-p) \times 8~000~000$. 
+
+If the page fault rate is high, performance is awful. If performance of the computer is to be reasonable, say around 10\%, the page fault rate has to be very, very low. On the order of $10^{-6}$. 
+
+And now you also know why solid state drives, SSDs, are such a huge performance increase for your computer. Instead of spending time measured in the milliseconds to find a page on disk, SSDs produce the data much quicker, with times that look more like memory reads.
+
+We have not yet covered file systems, but files tend to come with a bunch of overhead for file creation and management. To avoid this, the system usually has a ``swap file'' which is just one giant file or partition of the hard drive. The system can get better performance by just dealing with the swap file as one big file (block) and not tiny individual files~\cite{osc}.
+
+\subsection*{Copy-on-Write}
+Recall that in UNIX we create a new process with a call to \texttt{fork()} and that this creates an exact duplicate of the parent process. That process may replace itself with the \texttt{exec()} system call immediately. Thus it seems like it might be a waste of time to copy the memory space of the parent if the child is just going to throw it away immediately. What UNIX systems do is use the \textit{copy-on-write} technique: the parent and child share the same pages, but they are marked as copy-on-write~\cite{osc}.
+
+If there is immediately an \texttt{exec()} invocation then the new memory pages for the child are brought in and the unnecessary work is avoided. But suppose the child is to remain a clone of the parent.
+
+Initially, all pages are shared but marked. As soon as either the parent or child attempts to modify a page, a copy of the page is made and the modification is then applied to the new copy of the page. All unmodified pages remain shared, but only the pages that are actually modified will be copied, so there is no unnecessary copying.
+
+Some versions of UNIX, notably Solaris and Linux, have a system call \texttt{vfork()} which skips the copy-on-write procedure. The parent process is suspended and the child process uses the memory space of the parent~\cite{osc}. So any alterations the child makes will be visible to the parent when it resumes. Thus this is potentially dangerous, as the child can wreak a whole bunch of havoc. This is efficient if the intention is to immediately \texttt{exec()} and get a new memory space.
 
 \input{bibliography.tex}
 
