@@ -2,146 +2,146 @@
 
 \begin{document}
 
-\lecture{ 28 --- Scheduling: Idling, Priorities, Multiprocessor}{\term}{Prepared by Jeff Zarnett, taught by Seyed Majid Zahedi}
+\lecture{ 28 --- Scheduling Algorithms }{\term}{Prepared by Jeff Zarnett, taught by Seyed Majid Zahedi}
 
-\section*{Scheduling Algorithms, Continued}
+\section*{Scheduling Algorithms}
 
-Carrying on from last time, we will examine some more scheduling algorithms.
-
-\subsection*{Highest Response Ratio Next}
-
-We will introduce a new measure: normalized turnaround time. This is the ratio of the turnaround time (the time waiting plus the amount of time taken to execute) to the service time (the time it takes to execute). The relative amount of time waiting is somewhat more important; we can tolerate longer processes waiting a comparatively longer period of time. The goal, then, of the HRRN strategy, is to minimize not only the normalized turnaround time for each process, but to minimize the average over all processes~\cite{osi}.
-
-The way to calculate the response ratio, $R$, is by the following formula: $\dfrac{w + s}{s}$ where $w$ is the waiting time and $s$ is the service time. The service time is, as always, a guess. When it is time to select the next process to run, choose the process with the highest $R$ value. A new process will have a value of 1.0 at the beginning, because it has spent no time waiting (yet). Thus it is not that likely to get selected.
-
-Jobs with a small $s$, i.e., short jobs, are likely to get scheduled quickly, which is still a positive. In spite of this, the HRRN approach introduces something important we have not yet had: factoring in the age of the process. The term $w$ indicates how much time a process has spent waiting. Thus, a process that has spent a long time waiting will rise in priority, over time, until it gets a turn. So processes will not starve, because even a process that is expected to have a very long $s$ will eventually have a high enough $R$ due to the growth of $w$.
-
-We still need to have some way of estimating $s$, which may or may not be simple guessing. 
-
-\subsection*{Multilevel Queue (Feedback)}
-For the most part, until now, we have treated processes more or less equally (except when we have taken the highest priority process). While it might seem very fair, it may not be ideal for a situation where processes behave differently. A desktop or laptop has many processes running, some of which are visible to the user (foreground, or interactive processes) and some of which are not (background and batch processes). We could then apply different scheduling algorithms to different types of process.
-
-The multilevel queue takes the ready queue and breaks it up into several queues. A process can be in one (but only one) of the queues and it is assigned to the queue based on some attribute of the process (priority, memory needs, foreground/background, et cetera). The foreground queue, for example, could be scheduled by Round Robin, and the background by First-Come, First-Served~\cite{osc}.
-
-When there are multiple queues, we also need a way of choosing which of the queues to take from next. The policy we choose depends on goals. We might say some queues have absolute priority over others (e.g., as in the earlier highest priority, period option), or we might have time slicing amongst the queues. This could be balanced evenly (rotate through each) or give more time slices to some queues at the expense of others.
-
-An example of this was the CTSS (Compatible TimeSharing System) that ran on the IBM~7094. The CTSS designers decided that it was ideal to give CPU-Bound processes longer blocks of time to execute so they would not have to spend so much time swapping. They set up multiple queues. In the highest priority class, a process got 1 time slice; in the next one down, a process got 2 time slices; the third class meant 4 time slices, and so on. If a process ran up against the limit of a time slice (e.g., used the full 2 time slices), it was moved down a class. So it got a lower priority, but when it did get selected to run, it was able to run with a lower chance of being interrupted~\cite{mos}.
-
-Like a few schemes, we have seen so far, this is a ratchet: a process can move down in the priority list, but there does not appear to be a way for it to move up. So a process that needed a lot of CPU early on was going to be punished ``forever''. The designers of the system assumed that if the user pressed the Enter key, it might be a sign the process was likely to become interactive (and therefore should move up in priority). Some genius user (there's always one), figured out that by pressing the enter button repeatedly, his long running processes would finish faster. This was a bit unfair; his processes got priority over the others. But things really broke down when this individual decided to be nice: he told all his friends. And suddenly everyone was doing it and the benefit of the system was lost~\cite{mos}.
-
-This scheduling algorithm may also be referred to as \textit{feedback}. We do not have any information in advance about how long various processes will be. Instead of being concerned with how much CPU time will be used, which requires clairvoyance or guessing, we assign priority based on the amount of CPU time assigned so far. A process that has used a lot of CPU so far gets lower priority.
-
-\subsection*{Guaranteed Scheduling}
-
-And now for something completely different. The idea behind guaranteed scheduling is to promise the users something and then fulfill that promise. We could promise that if there are $n$ users, each gets an equal share (1/$n$) of the CPU time. Or with $m$ processes, each process gets 1/$m$ of the CPU time.
-
-To make this happen, the system must keep track of how much CPU time each process has received since its creation. It then considers the how this value compares to the ideal (time since creation divided by $n$). If a process has a value of 0.5, it means it has had only half the CPU it ``should'' have received. If it has a value of 2.0, it has had double. So the scheduling algorithm is then to run the process with the lowest score, trying to keep all values as close to 1.0 as we can~\cite{mos}.
-
-\subsection*{Lottery}
-
-The lottery is a system to give predictable results with a simple implementation. The premise is that every process gets some number of ``lottery tickets'' for each resource (e.g., CPU). When a decision has to be made, a lottery ticket is selected at random. The process that holds that ticket gets that resource. This system provides some clarity; if a process has priority $p$, what does that mean? If a process has a fraction $f$ of the total tickets, then we can expect that process to get about $f$\% of the resource. When a process is created or terminates this may increase or decrease the number of tickets, or result in their redistribution~\cite{mos}. 
-
-More important processes are given more tickets and have, therefore, a higher chance of winning. If there are 100 tickets outstanding, if a process has 25 of them, it has a 25\% chance of winning any given draw. To increase a process's chance of winning, give it more tickets. To decrease it, give it fewer. Unlike in the real lottery, though, there is always a winner. There are no ``unpurchased'' tickets and we can choose only a ticket that someone is holding.
-
-Co-operating processes may be permitted to exchange tickets. A client that sends a request to a server might then give all its tickets to the server, increasing the chance the server gets the resources to run next~\cite{mos}.
-
-This is a lot less overhead than guaranteed scheduling. We do not have to keep track of how much of the resource a process has received. Assuming that the lottery system is sufficiently random, over time the resource allocation will tend towards the proportions of the tickets each process holds. If process $A$ has 20\% of the tickets, $B$ has 30\%, and $C$ has 50\%, then the CPU will be given to the processes in approximately a 20:30:50 ratio, as expected. Of course, random number generation is a small struggle for computers, though the complexity of this is not something we want to examine here.
-
-
-\section*{The Idle Task}
-
-Sometimes our scheduling algorithm cannot produce a new process to run next because there is, quite frankly, nothing to do. The actual implementation of the idle thread may vary across different systems. In some cases it is just repeatedly invoking the scheduler; in others it does a bit of useless addition; or it might just be a whole bunch of \texttt{NOP} instructions. With truly nothing to do, the CPU can be told to halt or switch to a lower power state. Whatever it actually ``does'', the idle thread never has any dependencies on anything else and is always ready to run.
-
-Since the idle task does not necessarily do much, why have it? It prevents having special cases in the scheduler, first of all. It also provides some accounting information about how much of the time the CPU is not doing anything. In fact, a lot of the time on the desktop or laptop, task manager will tell you that ``System Idle Process'' is taking up a large percentage of the CPU. Because you are more intelligent than a certain technology journalist who may or may not be named John Dvorak, you will recognize that this just means the CPU is not doing anything; it does not mean that some mysterious system process is using up all your CPU's time.
-
-Saving power by shutting down (parts of) the processor seems like a nice savings of energy (and potentially increases battery life). On the other hand, time when the CPU is doing nothing might potentially be put to use. There are usually some accounting and housekeeping tasks that the CPU can be doing when it has nothing else. For example, the OS could collect statistical data, or defragment the hard drive (something we will look at).
-
-\section*{Bumping the Priority}
-Sometimes we get into a situation called a \textit{priority inversion}. This is what happens when a high priority process is waiting for a low priority process. Suppose that $P_{1}$ is high priority and is blocked on a semaphore, while $P_{2}$ is in its critical section. As $P_{2}$ is low priority, it might be a long time before $P_{2}$ is selected again to run and can finish and exit the critical section. So $P_{1}$ cannot run, because it is blocked, and it could be blocked for a very long time. In the meantime, other processes with lower priority than $P_{1}$ (but higher than $P_{2}$) carry on execution. Having $P_{1}$ waiting for the lower priority processes is rather undesirable.
-
-The solution is \textit{priority inheritance}. The right thing to do is to bump up the priority of $P_{2}$, temporarily, to be equal to that of $P_{1}$, so that $P_{1}$ can be unblocked as quickly as possible. To generalize, a lower priority process should inherit the higher priority if a higher priority process is waiting for a resource the lower priority process holds. So $P_{2}$ will get selected, will execute and exit the critical section. Its priority then falls down to normal, meaning $P_{1}$ will be selected and may continue.
-
-A famous case of priority inversion took place on the Mars Pathfinder rover. In short, a low priority task would acquire a semaphore, locking the information bus. A high priority task also needed that bus. There was, finally, a medium priority task for communication, which ran for a long time. If the low priority task had the bus, the high priority task was blocked; the medium priority task would be selected to run. While that happened, the low priority task could not finish and release the semaphore. Accordingly, the high priority task was stuck waiting. After a specified period of time, the system assumed the high priority task was stuck and its deadlock resolution strategy was armageddon: total system reboot (resulting in the loss of some data). 
-
-The Pathfinder solution was to enable priority inheritance on the information bus semaphore. This meant that the low priority task would get a higher priority than the communication task and would run to completion; then the high priority task would be able to run and the system would not assume a deadlock had occurred. It was, to a certain extent, fortunate that this option was built into the system at all and needed only to be turned on. Doing a major software update on a system that is located \textit{on another planet} is not quite the same as installing Windows updates on Patch Tuesday.
-
-\section*{Multiprocessor Scheduling}
-If you thought scheduling for a single processor was complicated enough, well, things are about to get exponentially harder. When we have more than one processor working on things at a time, then the complexity increases dramatically. 
-
-We can classify multiprocessor systems into three major buckets~\cite{osi}:
-
+In the last topic, we saw one example of a simple scheduling algorithm: always choose the highest priority (non-blocked) task, and execute it. It's good to be King, I guess, but that solution has some drawbacks. We will examine the following options:
 \begin{enumerate}
-	\item \textbf{Distributed}. We have a collection of relatively autonomous systems who interact. For more about this, take the class distributed systems.
-	\item \textbf{Functionally Specialized}. The system has lots of specialized chips working on their specific area (but we'll come back to this when we talk about I/O scheduling).
-	\item \textbf{Tightly Coupled}. A set of processors that share a common main memory and are under the control of the operating system. This is the kind we're most familiar with and going to examine here.
+	\item Highest Priority, Period
+	\item First-Come, First-Served
+	\item Round Robin
+	\item Shortest Process Next
+	\item Shortest Job First
+	\item Smallest Remaining Time
+	\item Highest Response Ratio Next
+	\item Multilevel Queue (Feedback)
+	\item Guaranteed Scheduling
+	\item Lottery
 \end{enumerate}
 
-Then we have to worry about the interactions of various processes. Specifically, how often they plan to interact. See this table (from~\cite{osi} again) that provides an overview of the granularities:
+The OS may will maintain some data about each process and this may be used in making decisions about scheduling, depending on the algorithm~\cite{osi}:
+
+\begin{enumerate}
+	\item The time spent waiting to run.
+	\item The time spent executing.
+	\item The total time of execution.
+\end{enumerate}
+
+The first two criteria in the list can easily be measured, but the third one must be estimated or supplied by the user. Old batch systems did sometimes ask users to provide an estimate of how long they thought a task was likely to take. If the user underestimated, then execution would be halted at the time they said, even if the operation was unfinished. But the higher the estimate, the lower the priority the task received; if too high the user task might never be scheduled to run at all. Operating systems do not ask the users in desktop systems to estimate how long a process will run, but supercomputers and other batch processing systems may still consider this as a criterion.
+
+\subsection*{Highest Priority, Period}
+
+Implementing this is not difficult; we could have some priority queues (one for each priority level). If a task is not blocked, put it in its appropriate priority queue. If the process's priority is changed (manually or otherwise), move it to its new home. We might also have a priority heap, or just one big linked list or array that we keep sorted by priority. However it's stored isn't actually the critical part here.
+
+The flaw in this has already been identified: it is vulnerable to starvation. A process of relatively low priority may never get the chance to run, because there is always something better to do right now. Humans presumably encounter situations like this all the time. Software projects may have bug reports open for years on end because they are never important enough to be addressed. In my personal life, there are books I'd like to read (the example ``Der Deutsch-Franz\"osische Krieg 1870/71'' springs to mind)\footnote{I first wrote the paragraph about this book in 2015 and guess what, by the time I review and revise this content in 2022 I have managed to read exactly zero pages of this book. I'd say this year is the year, but we both know that's not true.}, but I never get to them because something else always comes up... work to do, another book to read, a social event...
+
+In some systems this is a desirable property. It does not fulfill all short term scheduling criteria, notably response time and fairness. It may be suitable for life-and-safety-critical systems, such as the process to control a robot arm, to prevent a situation where the robot arm goes through the wall and the building falls down and you're dead. Fairness is not as important as the lives of people, in this situation.
+
+\subsection*{First-Come, First-Served}
+This is an obvious algorithm that is simple to implement. Whichever process requests the CPU first, gets the CPU first. Just imagine a queue of processes in which all processes are equal. A process enters the queue at the back and whichever process is at the front will be dequeued and get to run.  If the current process finishes or is blocked for some reason, the next ready process is selected. This is actually simpler than the highest priority, period scheme, because it ignores priority altogether. All processes will get a chance to run eventually, so low priority processes will not starve.
+
+Life is full of FCFS systems and many of them result in a lot of waiting in line: if you call the phone company because they billed you incorrectly -- again -- then you get the displeasure of waiting in line for a very long time to speak to the next available agent who is currently busy assisting other callers. If you don't want to or can't wait so long, the best you can do is try calling again at a less busy time.
+
+FCFS can result in some suboptimal outcomes. The average waiting time for processes might vary wildly. Consider if we have three processes, $P_{1}$, $P_{2}$, and $P_{3}$. Let us say that $P_{1}$ needs 24 units of CPU time; $P_{2}$ and $P_{3}$ require 3 units each.
 
 \begin{center}
-\begin{tabular}{l|l|l}
-	\textbf{Grain Size} & \textbf{Description} & \textbf{Interval (Instructions)}\\ \hline
-	Fine & Single instruction stream & $< 20$ \\\hline
-	Medium & Single application & $20 - 200$ \\\hline
-	Coarse & Multiple processes & $200 - 2000$ \\\hline
-	Very Coarse & Distributed computing & $2000 - 1$M \\\hline
-	Independent & Unrelated processes & N/A \\
-
-\end{tabular}
+	\includegraphics[width=0.7\textwidth]{images/fcfs-1.png}\\
+	First-Come, First-Served Scheduling for $P_{1}$, $P_{2}$, and $P_{3}$~\cite{osc}.
 \end{center}
 
-To sum it all up, the finer-grained the parallelism, the more care and attention needs to be given to how we are going to schedule a process in a multiprocessor system. If the processes are totally independent, then there is not too much to worry about; if we are taking a single process's thread and doing different instructions on different CPUs, then we have to be very careful to make sure that the execution is correct.
-
-If we choose asymmetric multiprocessing, we have a boss processor and this one alone is responsible for assigning work and managing the kernel data structures (e.g., process control blocks). If instead, the system uses symmetric multiprocessing, each processor is responsible for scheduling itself. We will need to make use of mutual exclusion and other synchronization techniques in the kernel to prevent errors in managing the execution of processes. We do not want to have two processors trying to dequeue from the ready queue at the same time, after all.
-
-\subsection*{Processor Affinity}
-Let us imagine that every processor has its own cache (e.g., the L1, L2, \& L3 caches). If that is the case, then we want to have \textit{processor affinity}. After some period of time of executing on this processor, a process will have a bunch of its data in the cache of that processor. If the process begins executing on another processor, all the data is in the ``wrong'' cache and there will be a lot more cache misses (which will slow down execution). Ideally, then we will keep executing on the same processor, wherever possible. This desire to stick with a certain processor is called processor affinity.
-
-If the OS is just going to make an effort but not guarantee that a process runs on a given processor, that is called \textit{soft affinity}. A process can move from one processor to another, but will not do so if it can avoid it. The alternative is \textit{hard affinity}: a process will only run on a specified processor (or set of processors). Linux, for example, has both soft and hard affinity~\cite{osc}.
-
-Another motivation why we might want to lock a process to a particular processor occurs when memory accesses are non-uniform. For the most part we assume that any memory read takes as much time as any other, and if we have one bus connecting the CPU to all of main memory, that is a safe assumption. If the CPU can access some parts of memory faster than others, the system has \textit{non-uniform memory access} (NUMA). See the diagram below:
+The total time needed to complete all processes is 30 units. The average completion time, however, is $(24 + 27 + 30) / 3$ = 27 units. Nothing wrong with this. Suppose, however, the processes arrived in a slightly different order:
 
 \begin{center}
-	\includegraphics[width=0.5\textwidth]{images/numa.png}\\
-	A system with Non-Uniform Memory Access (NUMA) times~\cite{osc}.
+	\includegraphics[width=0.7\textwidth]{images/fcfs-2.png}\\
+	$P_{1}$, $P_{2}$, and $P_{3}$ arriving in a different order~\cite{osc}.
 \end{center}
 
-If we have this situation, then our choice of processor should be based on where the memory of the process is located. The memory allocation routine should also pay attention to where to allocate memory requests, preferring to keep the program code together in memory. If there is data in one of the other blocks of memory, it does not mean game over, but it means slower execution.
+If $P_{1}$ arrived last instead, then the picture is somewhat different. It still takes 30 units of time to complete all processes, but the average completion time is $(3 + 6 + 30) / 3)$ = 13 units. Now this might make a big difference to the user: seeing processes 2 and 3 completed sooner will probably be viewed positively. Still, we consider it an undesirable thing that we have such a dramatic difference in how long $P_{2}$'s turnaround time is.
 
-\subsection*{Load Balancing}
-It is presumably obvious that if we have 4 processors, it is less than ideal to have one processor at 100\% utilization and 3 processors sitting around doing nothing. We want to keep the workload balanced between all the different systems. The process for this is \textit{load balancing}.
+FCFS as a scheduling algorithm also tends to favour CPU-Bound processes rather than I/O-Bound processes. When a CPU-Bound process is running, the I/O bound processes must wait in the queue like everybody else. This might lead to inefficient use of the resources; disk is slow so we would like to keep it busy at all times. If a disk write is completed and there is a process that would like to read something from disk, it would be ideal to issue that read straight away so the disk is constantly in use. With FCFS, however, the I/O devices are likely to suffer idle periods~\cite{osi}.
 
-Load balancing is typically necessary only where each processor has its own private queue of processes to run (the ``grocery store queue'' model); if there is a common ready queue (the ``bank queue'' model) then load balancing will tend to happen all on its own, as a processor with nothing to do will simply take the next process from the queue. But in most of the modern operating systems we are familiar with, each processor does have a private queue, so we need to do load balancing~\cite{osc}.
+The FCFS algorithm as it is generally described, is non-preemptive; a process that gets selected from the front of the queue runs until there is a reason to make the swap. So in theory, one process could monopolize the CPU (remember that some people are jerks). If we modify FCFS with periodic preemption, then we get a new system, Round Robin.
 
-There are two, non-exclusive approaches to redistributing the load: \textit{push} and \textit{pull} migration. It is called migration because a process migrates from one processor to another (it moves homes). If there is push migration, a task periodically checks how busy each processor is and then moves processes around to balance things out (to within some tolerance). Pull migration is when a processor with nothing to do ``steals'' a process from the queue of a busy processor. The Linux and FreeBSD schedulers, for example, use both~\cite{osc}.
+\subsection*{Round Robin}
+The idea of time slicing has already been introduced: every $t$ units of time, a timer generates an interrupt that is the prompt to run the short-term scheduler. Time slicing itself can be combined with many of the strategies for choosing the next process, but when it is combined with FCFS we get Round Robin. 
 
-Load balancing, as you can imagine, sometimes conflicts with processor affinity. If a process has a hard affinity for a processor, it cannot be migrated from one processor to another. If there is a soft affinity, it can be moved, but it is presumably not our first choice and we will move that process only if we have no other option. Even then, we might consider what to do: should we always move a process despite the fact that it means a whole bunch of cache misses? Should we never do so and leave processors idle? Perhaps the best thing to do is to put a certain ``penalty'' on moving and only move a process from one queue to another if it would be worthwhile (i.e., the imbalance is sufficiently large).
+The principal issue is: how big should $t$ be? If $t$ is too long, then processes may seem to be unresponsive while some other process has the CPU, or short processes may have to wait quite a while for their turn. If $t$ is too short, the system spends a lot of time handling the clock interrupt and running the scheduling algorithm and not a lot of time actually executing the processes~\cite{osi}.
 
-\subsection*{Multicore Processors}
-Before the early 2000s, the only way to get multiple processors in the system was to have multiple physical chips. But if you open up your laptop you are likely to find one physical chip. What gives? \textit{Multicore processors}. As far as the operating system is concerned, a quad-core chip is made of four logical processors, but it's all in one package and this can be faster and more convenient.
+On the principle of ``don't guess; measure'' we could make a decision about the size of $t$ based on the patterns of the system. If we know that the typical process tends to run for $r$ units of time before getting blocked on I/O or something, then it would be logical to choose $t$ such that it is slightly larger than $r$. If $t$ is smaller than $r$, then processes will frequently be interrupted by the time slice. Processes that are going to use a lot of CPU will be split up over multiple time slices anyways, but it's frustrating if the process would take 1.1 time slices. If $t$ is larger than $r$, many processes will not run up against that time slice limit and will hopefully accomplish a useful chunk of work before getting blocked for I/O or some other reason. 
 
-When a processor issues a memory read or write that is a cache miss (so the read has to go to memory), the CPU core can spend a lot of time (perhaps as much as 50\%) of its time waiting for that read to take place. We might refer to periods of time where there is computation as a compute cycle, and time spent waiting for memory as a \textit{memory stall}. These tend to alternate, though the length of time for each will vary significantly. It's all a question of how often memory is accessed and how many cache misses there are. See the diagram below:
+Thinking about this further, Round Robin tends to favour CPU-Bound processes. An I/O-Bound process spends a lot less time using the CPU. It runs for a short time, gets blocked on I/O, then when the I/O is finished, it goes back in the ready queue. So CPU-Bound processes are getting more of the CPU time.
+
+Round Robin can be improved to Virtual Round Robin to address this unfairness. It works like Round Robin, but a process that gets unblocked after I/O gets higher priority. Instead of just rejoining the general queue, there is an auxiliary queue for processes that were previously blocked on I/O. When the scheduler is choosing a process to run, it takes them from the auxiliary queue if possible. If a process simply ran up against the time limit, it goes into the regular ready queue instead. If dispatched from the auxiliary queue, it runs for up to the as-yet-unused fraction of a slice~\cite{vrr}.
 
 \begin{center}
-	\includegraphics[width=0.7\textwidth]{images/memory-stall.png}\\
-	Alternating compute and memory stall cycles~\cite{osc}.
+	\includegraphics[width=0.65\textwidth]{images/virtual-round-robin.png}\\
+	Queueing diagram for the Virtual Round Robin scheduling approach~\cite{osi}.
 \end{center}
 
-During a memory stall, the processor core may have nothing to do. As you might learn about if you take a course in processor design or programming for performance, you can sometimes move instructions around so that the memory read goes out ``early'' and a few other instructions can be executed in the meantime. 
+\subsection*{Shortest Process Next}
+If some information is available about the total length of execution then we may wish to give priority to short processes. We let short processes go first to get them over with quickly. The reason is made clear by the second example of FCFS from earlier; though it still took 30 units of time, total, the average time to completion of a task was a lot lower when the shorter processes of $P_{2}$ and $P_{3}$ ran before $P_{1}$. This means we will get faster turnaround times and better responsiveness, but longer processes may be waiting an unpredictable amount of time.
 
-To offset this problem, the solution was originally called \textit{hyperthreading}: two threads are assigned to each core; if one thread does a memory access or stalls, the code can switch to another thread with a limited penalty. The first CPU I had with hyperthreading was a Pentium IV (it was 2003), and it had one physical core but it would seemingly work on two threads at a time. See below:
+This might work, but you have noticed that the OS does not ask you, when you start a text editor, roughly how long you expect to be. Your boss on co-op may not be so accommodating. This is also a global assessment: how long the whole process takes. It might be better to worry about the length of CPU bursts and make decisions somewhat more locally...
+
+\subsection*{Shortest Job First}
+This strategy, unfortunately, is not given quite the right name, but it's the common name for the scheme. We should call it ``shortest next CPU burst'', but then again, other sciences are not so good at naming things either... the Red Panda is not a Panda at all.
+
+Right, naming aside, the goal is to choose the process that is likely to have the smallest CPU burst. If two are the same, then FCFS can break the tie (or just choose randomly).  If we have 4 processes, $P_{1}$ through $P_{4}$, whose predicted burst times are 6, 8, 7, and 3 respectively, we should schedule then such that the order would be $P_{4}, P_{1}, P_{3}, P_{2}$:
 
 \begin{center}
-	\includegraphics[width=0.7\textwidth]{images/hyperthreading.png}\\
-	Hyper threading in a single CPU core~\cite{osc}.
+\includegraphics[width=0.7\textwidth]{images/sjf.png}\\
+Scheduling the jobs with the shortest CPU burst first~\cite{osc}.
 \end{center}
 
-If we have coarse-grained multithreading, a thread will execute for a while and when there is a memory stall (or some other reason why a process gets blocked) then the processor will swap to another thread or process, flushing the instruction pipeline. That is expensive. If we have fine-grained multithreading, it looks more like the diagram above where we have alternation between two threads that are in the pipeline at the same time. The cost of switching between these two threads is small~\cite{osc}.
+The average waiting time is $(3 + 16 + 9 + 0) / 4$ = 7 units of time. This is significantly better than the FCFS scheduling. In fact, the algorithm is provably optimal in giving the minimum average waiting time for processes. Moving a short process up means it finishes faster, and that decreases its waiting time, while moving longer processes back increases their waiting time. Overall, this scheme is a net positive because the decreases outweigh the increases~\cite{osc}.
 
-So now we have two different levels of scheduling: assigning a process or thread to a processor (the job of the operating system) and deciding when to swap between the two threads in the core (typically the job of the hardware). 
+The problem is predicting the CPU burst times. The best thing we may be able to do is gather information about the past and use that to guess about the future. The formula in~\cite{osi}:
+
+\begin{center}
+$S_{n+1} = \frac{1}{n}\displaystyle\sum_{i=1}^{n}T_{i}$
+\end{center}
+
+where: $T_{i}$ is the burst time for the $i$th instance of this process; $S_{i}$ is the predicted value for the $i$th instance; and $S_{1}$ is a guess at the first value (not predicted, because we have no data to go on at that point). Instead of picturing it as a sum each time, we can modify the equation to just update the value:
+
+\begin{center}
+$S_{n+1} = \frac{1}{n}T_{n} + \frac{n - 1}{n} S_{n}$
+\end{center}
+
+This routine, as you may have guessed, gives each term in the summation equal weight of $\frac{1}{n}$. What we would like to do is give greater weight to the more recent values. The strategy for doing so, as in~\cite{osi} is exponential averaging. We define a weighting factor $\alpha$, somewhere between 0 and 1, that determines how much weight the observations are given:
+
+\begin{center}
+$S_{n+1} = \alpha T_{n} + (1 - \alpha) S_{n}$
+\end{center}
+
+Thus, the older the observation, the less it is counted in the average. The larger the value of $\alpha$, the more the recent observations matter. The diagram below compares simple averaging (no use of $\alpha$ to age the data) against the values of $\alpha$ of 0.8 and 0.5. The case of $\alpha = 0.8$ assigns significantly more weight to the most recent 4 events than the others.
+
+\begin{center}
+	\includegraphics[width=0.7\textwidth]{images/exponential-averaging.png}\\
+	Use of Exponential Averaging~\cite{osi}.
+\end{center}
 
 
+We might give an estimate of $S_{1} = 0$ to start with, which gives new processes priority and a chance to get started. After they have started and run a bit, we will have some data. But first we have to give them a chance.
 
+\begin{center}
+\includegraphics[width=0.7\textwidth]{images/sjf-2.png}\\
+Predictions ($\tau_{i}$) and actual CPU burst ($t_{i}$) example~\cite{osc}.
+\end{center}
+
+There is still a chance that longer processes will starve; if there is a constant stream of shorter processes, they will continue to get scheduled ahead of a long one, causing the long one to wait unreasonably long...
+
+\subsection*{Shortest Remaining Time}
+
+Shortest remaining time is a modification of the preceding strategy, which allows for some additional preemption. When a new process is scheduled or an old one becomes unblocked, the scheduler will evaluate if it has a shorter predicted running time than the currently-executing process. If so, then the new (or unblocked) process will displace the currently-executing one and start running right away.
+
+As with Shortest Job First, there is a chance that long processes will starve because of a steady stream of shorter processes. If we choose $S_{1}$ to be zero for new processes, it means they will always preempt the running process. This may or may not be desirable.
+
+One advantage we have in choosing SRT is that it means we no longer need to have time slicing. Instead of interrupting the running process every $t$ units of time, the other interrupts (users launching programs, hardware operations completed, etc) will be the prompts to run the scheduler. Thus, the system does not spend any time handling the clock interrupts, which will be a performance increase. Handling the clock interrupt is not expensive, but even an inexpensive operation, done a million times, will eventually add up...~\cite{osi}
+
+\subsection*{Batch and Interactive}
+
+So far the scheduling routines we have looked at are more suitable to batch processing systems (mainframes, supercomputers, etc.) than to interactive desktop systems. The remaining scheduling algorithms in the list will look a lot more like what we expect to see on our laptops and phones...
 
 \input{bibliography.tex}
 
